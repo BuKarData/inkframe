@@ -4,133 +4,338 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>InkFrame — Image Manager</title>
+  <meta name="description" content="Manage your InkFrame E-ink display. Upload, crop, and customize images.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Cropper.js for image cropping -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 
   <style>
     :root {
-      --ink: #0a0a0a;
-      --paper: #faf9f7;
-      --paper-warm: #f5f3ef;
-      --accent: #c41e3a;
-      --gray-100: #f7f6f4;
-      --gray-200: #e8e6e1;
-      --gray-300: #d4d1cc;
-      --gray-400: #a8a5a0;
-      --gray-500: #8a8680;
-      --gray-600: #6b6862;
+      --bg: #0f0f0f;
+      --bg-secondary: #1a1a1a;
+      --bg-tertiary: #242424;
+      --surface: #2a2a2a;
+      --surface-hover: #333333;
+      --border: #3a3a3a;
+      --text: #ffffff;
+      --text-secondary: #a0a0a0;
+      --text-muted: #666666;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
       --success: #22c55e;
-      --warning: #f59e0b;
       --error: #ef4444;
-      --sans: 'DM Sans', -apple-system, sans-serif;
+      --warning: #f59e0b;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: var(--sans);
-      background: var(--gray-100);
-      color: var(--ink);
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      line-height: 1.5;
     }
 
-    /* Header */
-    .header {
-      background: var(--ink);
-      color: var(--paper);
-      padding: 1rem 2rem;
+    /* Language Selector */
+    .lang-selector {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
       display: flex;
-      justify-content: space-between;
+      gap: 0.25rem;
+      background: var(--surface);
+      padding: 0.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .lang-btn {
+      padding: 0.5rem 0.75rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .lang-btn:hover { background: var(--surface-hover); color: var(--text); }
+    .lang-btn.active { background: var(--accent); color: white; }
+
+    /* Auth Container */
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
       align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--bg) 0%, #1a1a2e 100%);
+    }
+
+    .auth-wrapper {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .auth-logo h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .auth-logo p {
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+    }
+
+    .auth-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--surface);
+      padding: 0.25rem;
+      border-radius: 10px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .auth-tab:hover { color: var(--text); }
+    .auth-tab.active { background: var(--accent); color: white; }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .form-group input::placeholder { color: var(--text-muted); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.875rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      width: 100%;
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover { background: var(--surface-hover); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      padding: 0.5rem;
+    }
+
+    .btn-ghost:hover { color: var(--text); background: var(--surface); }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .auth-footer a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .auth-footer a:hover { text-decoration: underline; }
+
+    /* App Layout */
+    .app-container { display: none; min-height: 100vh; }
+
+    .app-header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 100;
     }
 
-    .logo {
+    .app-logo {
       font-size: 1.25rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    .header-nav {
+    .app-nav {
       display: flex;
-      gap: 1.5rem;
-      align-items: center;
+      gap: 0.25rem;
+      background: var(--surface);
+      padding: 0.25rem;
+      border-radius: 10px;
     }
 
-    .header-nav a {
-      color: var(--gray-400);
-      text-decoration: none;
+    .nav-btn {
+      padding: 0.625rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
       font-size: 0.875rem;
-      transition: color 0.2s;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    .header-nav a:hover, .header-nav a.active {
-      color: var(--paper);
-    }
+    .nav-btn:hover { color: var(--text); background: var(--surface-hover); }
+    .nav-btn.active { background: var(--accent); color: white; }
 
     .user-menu {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       padding: 0.5rem 1rem;
-      background: rgba(255,255,255,0.1);
-      border-radius: 8px;
+      background: var(--surface);
+      border-radius: 10px;
       cursor: pointer;
+      transition: all 0.2s;
     }
+
+    .user-menu:hover { background: var(--surface-hover); }
 
     .user-avatar {
       width: 32px;
       height: 32px;
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.875rem;
       font-weight: 600;
+      font-size: 0.875rem;
     }
 
-    /* Main Layout */
-    .main {
+    .user-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    /* Main Content */
+    .app-main {
       display: grid;
-      grid-template-columns: 300px 1fr 350px;
+      grid-template-columns: 280px 1fr 320px;
       min-height: calc(100vh - 60px);
     }
 
-    /* Sidebar - Gallery */
+    /* Sidebar */
     .sidebar {
-      background: var(--paper);
-      border-right: 1px solid var(--gray-200);
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .sidebar-header {
       padding: 1.5rem;
-      border-bottom: 1px solid var(--gray-200);
+      border-bottom: 1px solid var(--border);
     }
 
-    .sidebar-header h2 {
-      font-size: 1rem;
+    .sidebar-title {
+      font-size: 0.875rem;
       font-weight: 600;
+      color: var(--text-secondary);
       margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .upload-zone {
-      border: 2px dashed var(--gray-300);
+      border: 2px dashed var(--border);
       border-radius: 12px;
-      padding: 1.5rem;
+      padding: 2rem 1rem;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s;
@@ -138,26 +343,30 @@
 
     .upload-zone:hover, .upload-zone.dragover {
       border-color: var(--accent);
-      background: rgba(196, 30, 58, 0.05);
+      background: rgba(99, 102, 241, 0.1);
     }
 
-    .upload-zone svg {
-      width: 32px;
-      height: 32px;
-      color: var(--gray-400);
-      margin-bottom: 0.5rem;
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 1rem;
+      background: var(--surface);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .upload-zone p {
+    .upload-icon svg { width: 24px; height: 24px; color: var(--accent); }
+
+    .upload-text {
+      color: var(--text-secondary);
       font-size: 0.875rem;
-      color: var(--gray-500);
     }
 
-    .upload-zone span {
-      color: var(--accent);
-      font-weight: 500;
-    }
+    .upload-text strong { color: var(--accent); }
 
+    /* Gallery */
     .gallery {
       flex: 1;
       overflow-y: auto;
@@ -172,108 +381,89 @@
 
     .gallery-item {
       aspect-ratio: 1;
-      background: var(--gray-200);
-      border-radius: 8px;
+      background: var(--surface);
+      border-radius: 10px;
       overflow: hidden;
       cursor: pointer;
       position: relative;
       transition: all 0.2s;
+      border: 2px solid transparent;
     }
 
-    .gallery-item:hover {
-      transform: scale(1.02);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .gallery-item.selected {
-      outline: 3px solid var(--accent);
-      outline-offset: 2px;
-    }
-
-    .gallery-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .gallery-item:hover { transform: scale(1.02); }
+    .gallery-item.selected { border-color: var(--accent); }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
 
     .gallery-item .delete-btn {
       position: absolute;
-      top: 4px;
-      right: 4px;
-      width: 24px;
-      height: 24px;
-      background: rgba(0,0,0,0.6);
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 28px;
+      height: 28px;
+      background: rgba(0,0,0,0.7);
       border: none;
-      border-radius: 50%;
+      border-radius: 6px;
       color: white;
       cursor: pointer;
       opacity: 0;
-      transition: opacity 0.2s;
+      transition: all 0.2s;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .gallery-item:hover .delete-btn {
-      opacity: 1;
-    }
+    .gallery-item:hover .delete-btn { opacity: 1; }
+    .gallery-item .delete-btn:hover { background: var(--error); }
 
     .gallery-empty {
       text-align: center;
-      padding: 2rem;
-      color: var(--gray-500);
+      padding: 3rem 1rem;
+      color: var(--text-muted);
     }
 
-    /* Editor Area */
+    .gallery-empty svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* Editor */
     .editor {
-      background: var(--gray-100);
+      background: var(--bg);
       display: flex;
       flex-direction: column;
     }
 
     .editor-toolbar {
-      background: var(--paper);
-      padding: 0.75rem 1.5rem;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--gray-200);
     }
 
-    .tool-group {
-      display: flex;
-      gap: 0.25rem;
-    }
+    .tool-group { display: flex; gap: 0.25rem; }
 
     .tool-btn {
       padding: 0.5rem 1rem;
       border: none;
       background: transparent;
-      cursor: pointer;
-      font-family: var(--sans);
+      color: var(--text-secondary);
       font-size: 0.875rem;
-      color: var(--gray-600);
-      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 8px;
       transition: all 0.2s;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .tool-btn:hover {
-      background: var(--gray-100);
-      color: var(--ink);
-    }
-
-    .tool-btn.active {
-      background: var(--ink);
-      color: var(--paper);
-    }
-
-    .tool-btn svg {
-      width: 18px;
-      height: 18px;
-    }
+    .tool-btn:hover { background: var(--surface); color: var(--text); }
+    .tool-btn.active { background: var(--accent); color: white; }
+    .tool-btn svg { width: 18px; height: 18px; }
 
     .editor-canvas {
       flex: 1;
@@ -281,15 +471,27 @@
       align-items: center;
       justify-content: center;
       padding: 2rem;
-      position: relative;
+    }
+
+    .editor-placeholder {
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .editor-placeholder svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 1rem;
+      opacity: 0.3;
     }
 
     .canvas-container {
       max-width: 100%;
       max-height: 100%;
-      background: white;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      position: relative;
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+      display: none;
     }
 
     .canvas-container img {
@@ -298,475 +500,170 @@
       display: block;
     }
 
-    .editor-placeholder {
-      text-align: center;
-      color: var(--gray-500);
-    }
-
-    .editor-placeholder svg {
-      width: 64px;
-      height: 64px;
-      color: var(--gray-300);
-      margin-bottom: 1rem;
-    }
-
-    /* Preview Panel */
-    .preview-panel {
-      background: var(--paper);
-      border-left: 1px solid var(--gray-200);
+    /* Panel */
+    .panel {
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
+      overflow-y: auto;
     }
 
     .panel-section {
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--gray-200);
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border);
     }
 
-    .panel-section h3 {
+    .panel-title {
       font-size: 0.75rem;
       font-weight: 600;
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--gray-500);
       margin-bottom: 1rem;
     }
 
     /* Device Preview */
-    .device-preview {
-      background: var(--ink);
+    .device-frame {
+      background: #1a1a1a;
       border-radius: 16px;
       padding: 12px;
-      max-width: 280px;
+      max-width: 200px;
       margin: 0 auto;
     }
 
     .device-screen {
-      background: var(--paper);
-      border-radius: 6px;
+      background: #e8e4d9;
+      border-radius: 4px;
       aspect-ratio: 1;
       overflow: hidden;
-      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .device-screen img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      filter: grayscale(100%) contrast(1.1);
     }
 
-    .device-screen.eink-filter img {
-      filter: grayscale(100%) contrast(1.2);
+    .device-screen .placeholder-text {
+      color: #666;
+      font-size: 0.75rem;
     }
 
-    .device-info {
+    .device-label {
       text-align: center;
       margin-top: 0.75rem;
       font-size: 0.75rem;
-      color: var(--gray-400);
+      color: var(--text-muted);
     }
 
-    /* Adjustment Controls */
-    .adjustment-control {
-      margin-bottom: 1.25rem;
-    }
+    /* Controls */
+    .control-group { margin-bottom: 1.25rem; }
+    .control-group:last-child { margin-bottom: 0; }
 
-    .adjustment-control:last-child {
-      margin-bottom: 0;
-    }
-
-    .adjustment-label {
+    .control-label {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 0.5rem;
-    }
-
-    .adjustment-label span {
       font-size: 0.875rem;
-      color: var(--gray-600);
+      color: var(--text-secondary);
     }
 
-    .adjustment-label .value {
+    .control-value {
       font-size: 0.75rem;
-      color: var(--gray-500);
+      color: var(--text-muted);
       font-weight: 500;
     }
 
     .slider {
       width: 100%;
       -webkit-appearance: none;
-      height: 4px;
-      background: var(--gray-200);
-      border-radius: 2px;
+      height: 6px;
+      background: var(--surface);
+      border-radius: 3px;
       outline: none;
     }
 
     .slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      background: var(--ink);
+      width: 18px;
+      height: 18px;
+      background: var(--accent);
       border-radius: 50%;
       cursor: pointer;
       transition: transform 0.1s;
     }
 
-    .slider::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
-    }
+    .slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
 
-    /* Aspect Ratio Selector */
-    .aspect-options {
+    /* Option Buttons */
+    .option-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 0.5rem;
     }
 
-    .aspect-btn {
+    .option-btn {
       padding: 0.75rem 0.5rem;
-      border: 1px solid var(--gray-200);
-      background: var(--paper);
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
-    }
-
-    .aspect-btn:hover {
-      border-color: var(--gray-400);
-    }
-
-    .aspect-btn.selected {
-      border-color: var(--ink);
-      background: var(--ink);
-      color: var(--paper);
-    }
-
-    .aspect-btn .ratio {
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .aspect-btn .label {
-      font-size: 0.625rem;
-      color: var(--gray-500);
-      margin-top: 0.25rem;
-    }
-
-    .aspect-btn.selected .label {
-      color: var(--gray-400);
-    }
-
-    /* Dither Options */
-    .dither-options {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .dither-btn {
-      flex: 1;
-      padding: 0.75rem;
-      border: 1px solid var(--gray-200);
-      background: var(--paper);
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: var(--sans);
+      color: var(--text-secondary);
       font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
       transition: all 0.2s;
+      text-align: center;
     }
 
-    .dither-btn:hover {
-      border-color: var(--gray-400);
-    }
+    .option-btn:hover { border-color: var(--text-muted); color: var(--text); }
+    .option-btn.selected { background: var(--accent); border-color: var(--accent); color: white; }
 
-    .dither-btn.selected {
-      border-color: var(--ink);
-      background: var(--ink);
-      color: var(--paper);
-    }
+    .option-btn .label { font-size: 0.875rem; font-weight: 600; }
+    .option-btn .sublabel { font-size: 0.625rem; margin-top: 0.25rem; opacity: 0.8; }
 
     /* Action Buttons */
-    .action-buttons {
-      padding: 1.5rem;
+    .panel-actions {
+      padding: 1.25rem;
       margin-top: auto;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-    }
-
-    .btn {
-      padding: 1rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-family: var(--sans);
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-
-    .btn-primary {
-      background: var(--ink);
-      color: var(--paper);
-    }
-
-    .btn-primary:hover {
-      background: var(--accent);
-    }
-
-    .btn-primary:disabled {
-      background: var(--gray-300);
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      background: var(--paper);
-      color: var(--ink);
-      border: 1px solid var(--gray-200);
-    }
-
-    .btn-secondary:hover {
-      background: var(--gray-100);
-    }
-
-    /* Toast Notifications */
-    .toast-container {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .toast {
-      background: var(--ink);
-      color: var(--paper);
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-      animation: slideIn 0.3s ease;
-    }
-
-    .toast.success {
-      background: var(--success);
-    }
-
-    .toast.error {
-      background: var(--error);
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(100px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal {
-      background: var(--paper);
-      border-radius: 16px;
-      padding: 2rem;
-      max-width: 400px;
-      width: 90%;
-      transform: scale(0.9);
-      transition: transform 0.3s;
-    }
-
-    .modal-overlay.active .modal {
-      transform: scale(1);
-    }
-
-    .modal h3 {
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-    }
-
-    .modal p {
-      color: var(--gray-600);
-      margin-bottom: 1.5rem;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: flex-end;
-    }
-
-    /* Auth Forms */
-    .auth-container {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--gray-100);
-    }
-
-    .auth-card {
-      background: var(--paper);
-      padding: 3rem;
-      border-radius: 16px;
-      max-width: 400px;
-      width: 90%;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-
-    .auth-card h1 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .auth-card .subtitle {
-      color: var(--gray-500);
-      margin-bottom: 2rem;
-    }
-
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 0.875rem 1rem;
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      font-family: var(--sans);
-      font-size: 1rem;
-      transition: border-color 0.2s;
-    }
-
-    .form-group input:focus {
-      outline: none;
-      border-color: var(--ink);
-    }
-
-    .auth-link {
-      text-align: center;
-      margin-top: 1.5rem;
-      font-size: 0.875rem;
-      color: var(--gray-500);
-    }
-
-    .auth-link a {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    /* Cropper styles */
-    .cropper-container {
-      max-height: 60vh;
-    }
-
-    .cropper-view-box,
-    .cropper-face {
-      border-radius: 0;
-    }
-
-    /* Loading state */
-    .loading {
-      position: relative;
-      pointer-events: none;
-    }
-
-    .loading::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .spinner {
-      width: 24px;
-      height: 24px;
-      border: 2px solid var(--gray-200);
-      border-top-color: var(--ink);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+      border-top: 1px solid var(--border);
     }
 
     /* Devices Tab */
-    .devices-main, .settings-main {
-      display: flex;
-      justify-content: center;
-      padding: 2rem;
-    }
+    .tab-content { display: none; padding: 2rem; }
+    .tab-content.active { display: block; }
 
-    .devices-content, .settings-content {
+    .devices-page, .settings-page {
       max-width: 800px;
-      width: 100%;
+      margin: 0 auto;
     }
 
-    .devices-header, .settings-header {
+    .page-header {
       margin-bottom: 2rem;
     }
 
-    .devices-header h2, .settings-header h2 {
+    .page-header h2 {
       font-size: 1.5rem;
       font-weight: 600;
       margin-bottom: 0.5rem;
     }
 
-    .devices-header p, .settings-header p {
-      color: var(--gray-500);
-    }
-
-    .devices-list {
-      display: grid;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
+    .page-header p { color: var(--text-secondary); }
 
     .device-card {
-      background: var(--paper);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1.5rem;
+      margin-bottom: 1rem;
       display: flex;
       align-items: center;
       gap: 1.5rem;
@@ -776,79 +673,61 @@
       flex-direction: column;
       text-align: center;
       padding: 3rem;
-      border: 2px dashed var(--gray-200);
-      background: transparent;
+      border-style: dashed;
     }
 
-    .device-card.empty .device-icon {
-      color: var(--gray-300);
+    .device-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--surface);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .device-card.empty h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
+    .device-icon svg { width: 28px; height: 28px; color: var(--accent); }
 
-    .device-card.empty p {
-      color: var(--gray-500);
-      font-size: 0.875rem;
-    }
-
-    .device-info {
-      flex: 1;
-    }
-
-    .device-info h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .device-info p {
-      color: var(--gray-500);
-      font-size: 0.875rem;
-    }
+    .device-info { flex: 1; }
+    .device-info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .device-info p { color: var(--text-secondary); font-size: 0.875rem; }
 
     .device-status {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      margin-top: 0.5rem;
       font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
-    .device-status .dot {
+    .status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: var(--success);
     }
 
-    .device-status .dot.offline {
-      background: var(--gray-400);
-    }
+    .status-dot.offline { background: var(--text-muted); }
 
-    .device-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .link-device-section {
-      background: var(--paper);
+    .link-section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 2rem;
+      padding: 1.5rem;
+      margin-top: 2rem;
     }
 
-    .link-device-section h3 {
+    .link-section h3 {
       font-size: 1rem;
       font-weight: 600;
       margin-bottom: 0.5rem;
     }
 
-    .link-device-section p {
-      color: var(--gray-500);
+    .link-section p {
+      color: var(--text-secondary);
       font-size: 0.875rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
 
     .link-form {
@@ -858,43 +737,43 @@
 
     .link-form input {
       flex: 1;
-      padding: 0.875rem 1rem;
-      border: 1px solid var(--gray-200);
+      padding: 0.75rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      font-family: var(--sans);
-      font-size: 1rem;
+      color: var(--text);
+      font-size: 0.875rem;
     }
 
     .link-form input:focus {
       outline: none;
-      border-color: var(--ink);
+      border-color: var(--accent);
     }
 
-    .link-help {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: var(--gray-100);
+    .help-box {
+      background: var(--surface);
       border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
       font-size: 0.875rem;
     }
 
-    .link-help p {
-      margin-bottom: 0.75rem;
-      color: var(--ink);
-    }
-
-    .link-help ol {
-      margin-left: 1.25rem;
-      color: var(--gray-600);
-    }
-
-    .link-help li {
+    .help-box h4 {
+      color: var(--text);
       margin-bottom: 0.5rem;
     }
 
-    /* Settings Tab */
+    .help-box ol {
+      color: var(--text-secondary);
+      margin-left: 1.25rem;
+    }
+
+    .help-box li { margin-bottom: 0.25rem; }
+
+    /* Settings */
     .settings-section {
-      background: var(--paper);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
@@ -903,10 +782,12 @@
     .settings-section h3 {
       font-size: 0.875rem;
       font-weight: 600;
-      color: var(--gray-500);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       margin-bottom: 1rem;
       padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--gray-200);
+      border-bottom: 1px solid var(--border);
     }
 
     .setting-item {
@@ -914,512 +795,787 @@
       justify-content: space-between;
       align-items: center;
       padding: 1rem 0;
-      border-bottom: 1px solid var(--gray-100);
+      border-bottom: 1px solid var(--border);
     }
 
-    .setting-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
+    .setting-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-item:first-of-type { padding-top: 0; }
 
-    .setting-item:first-of-type {
-      padding-top: 0;
-    }
+    .setting-label { font-weight: 500; }
+    .setting-value { color: var(--text-secondary); font-size: 0.875rem; }
 
-    .setting-info {
+    .settings-section.danger { border-color: var(--error); }
+    .settings-section.danger h3 { color: var(--error); }
+
+    .btn-danger { background: var(--error); color: white; }
+    .btn-danger:hover { background: #dc2626; }
+
+    .btn-sm { padding: 0.5rem 1rem; font-size: 0.75rem; }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 9999;
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.75rem;
     }
 
-    .setting-label {
-      font-weight: 500;
+    .toast {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      animation: slideIn 0.3s ease;
     }
 
-    .setting-value {
-      color: var(--gray-500);
-      font-size: 0.875rem;
+    .toast.success { border-color: var(--success); }
+    .toast.success svg { color: var(--success); }
+    .toast.error { border-color: var(--error); }
+    .toast.error svg { color: var(--error); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(100px); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
-    .setting-desc {
-      color: var(--gray-500);
-      font-size: 0.75rem;
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
     }
 
-    .settings-section select {
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--gray-200);
-      border-radius: 6px;
-      font-family: var(--sans);
-      font-size: 0.875rem;
-      background: white;
-      cursor: pointer;
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      max-width: 400px;
+      width: 90%;
+      transform: scale(0.95);
+      transition: transform 0.2s;
     }
 
-    .btn-sm {
-      padding: 0.5rem 1rem;
-      font-size: 0.75rem;
-    }
+    .modal-overlay.active .modal { transform: scale(1); }
 
-    .btn-danger {
-      background: var(--error);
-      color: white;
-      border: none;
-    }
+    .modal h3 { font-size: 1.125rem; margin-bottom: 0.75rem; }
+    .modal p { color: var(--text-secondary); margin-bottom: 1.5rem; }
 
-    .btn-danger:hover {
-      background: #dc2626;
-    }
-
-    .danger-zone {
-      border: 1px solid var(--error);
-    }
-
-    .danger-zone h3 {
-      color: var(--error);
-    }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
 
     /* Responsive */
     @media (max-width: 1200px) {
-      .main {
-        grid-template-columns: 250px 1fr 300px;
-      }
+      .app-main { grid-template-columns: 240px 1fr 280px; }
     }
 
     @media (max-width: 900px) {
-      .main {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        display: none;
-      }
-
-      .preview-panel {
-        display: none;
-      }
+      .app-main { grid-template-columns: 1fr; }
+      .sidebar, .panel { display: none; }
+      .lang-selector { top: auto; bottom: 1rem; }
     }
+
+    /* Cropper */
+    .cropper-view-box, .cropper-face { border-radius: 0; }
   </style>
 </head>
 <body>
-  <!-- App View -->
-  <div id="app" style="display: none;">
-    <header class="header">
-      <span class="logo">InkFrame</span>
-      <nav class="header-nav">
-        <a href="#" class="active" data-tab="images" onclick="showTab('images')">Images</a>
-        <a href="#" data-tab="devices" onclick="showTab('devices')">Devices</a>
-        <a href="#" data-tab="settings" onclick="showTab('settings')">Settings</a>
+  <!-- Language Selector -->
+  <div class="lang-selector">
+    <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
+    <button class="lang-btn" onclick="setLanguage('pl')">PL</button>
+    <button class="lang-btn" onclick="setLanguage('de')">DE</button>
+    <button class="lang-btn" onclick="setLanguage('es')">ES</button>
+  </div>
+
+  <!-- Auth Page -->
+  <div id="authPage" class="auth-page">
+    <div class="auth-wrapper">
+      <div class="auth-logo">
+        <h1>InkFrame</h1>
+        <p data-i18n="auth.subtitle">E-ink Display Manager</p>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" onclick="setAuthMode('login')" data-i18n="auth.signIn">Sign In</button>
+          <button class="auth-tab" onclick="setAuthMode('register')" data-i18n="auth.signUp">Sign Up</button>
+        </div>
+
+        <form id="authForm">
+          <div class="form-group" id="nameGroup" style="display: none;">
+            <label for="name" data-i18n="auth.name">Name</label>
+            <input type="text" id="name" data-i18n-placeholder="auth.namePlaceholder" placeholder="Your name">
+          </div>
+          <div class="form-group">
+            <label for="email" data-i18n="auth.email">Email</label>
+            <input type="email" id="email" data-i18n-placeholder="auth.emailPlaceholder" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="password" data-i18n="auth.password">Password</label>
+            <input type="password" id="password" data-i18n-placeholder="auth.passwordPlaceholder" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" class="btn btn-primary" id="authSubmit" data-i18n="auth.signIn">Sign In</button>
+        </form>
+
+        <div class="auth-footer" id="authFooter">
+          <span data-i18n="auth.noAccount">Don't have an account?</span>
+          <a href="#" onclick="setAuthMode('register'); return false;" data-i18n="auth.signUpLink">Sign up</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Container -->
+  <div id="appContainer" class="app-container">
+    <header class="app-header">
+      <div class="app-logo">InkFrame</div>
+      <nav class="app-nav">
+        <button class="nav-btn active" data-tab="images" onclick="showTab('images')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+          </svg>
+          <span data-i18n="nav.images">Images</span>
+        </button>
+        <button class="nav-btn" data-tab="devices" onclick="showTab('devices')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          <span data-i18n="nav.devices">Devices</span>
+        </button>
+        <button class="nav-btn" data-tab="settings" onclick="showTab('settings')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M1 12h2m18 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>
+          </svg>
+          <span data-i18n="nav.settings">Settings</span>
+        </button>
       </nav>
       <div class="user-menu" onclick="logout()">
         <div class="user-avatar" id="userAvatar">U</div>
-        <span id="userName">User</span>
+        <span class="user-name" id="userName">User</span>
       </div>
     </header>
 
-    <main class="main" id="imagesTab">
-      <!-- Sidebar Gallery -->
+    <!-- Images Tab -->
+    <main class="app-main tab-content active" id="imagesTab">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h2>Your Images</h2>
+          <div class="sidebar-title" data-i18n="sidebar.yourImages">Your Images</div>
           <div class="upload-zone" id="uploadZone">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            <p>Drag & drop or <span>browse</span></p>
+            <div class="upload-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <p class="upload-text" data-i18n="sidebar.uploadText">Drag & drop or <strong>browse</strong></p>
           </div>
           <input type="file" id="fileInput" accept="image/*" hidden>
         </div>
         <div class="gallery" id="gallery">
           <div class="gallery-empty">
-            <p>No images yet</p>
-            <p>Upload your first image to get started</p>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+            </svg>
+            <p data-i18n="sidebar.noImages">No images yet</p>
           </div>
         </div>
       </aside>
 
-      <!-- Editor -->
       <section class="editor">
         <div class="editor-toolbar">
           <div class="tool-group">
-            <button class="tool-btn active" data-tool="crop" onclick="setTool('crop')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/>
-                <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/>
-              </svg>
-              Crop
+            <button class="tool-btn active" data-tool="crop">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+              <span data-i18n="editor.crop">Crop</span>
             </button>
-            <button class="tool-btn" data-tool="adjust" onclick="setTool('adjust')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-              Adjust
+            <button class="tool-btn" data-tool="adjust">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M1 12h2m18 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+              <span data-i18n="editor.adjust">Adjust</span>
             </button>
           </div>
-          <div class="tool-group">
-            <button class="tool-btn" onclick="resetEdits()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                <path d="M3 3v5h5"/>
-              </svg>
-              Reset
-            </button>
-          </div>
+          <button class="tool-btn" onclick="resetEdits()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span data-i18n="editor.reset">Reset</span>
+          </button>
         </div>
 
-        <div class="editor-canvas" id="editorCanvas">
+        <div class="editor-canvas">
           <div class="editor-placeholder" id="editorPlaceholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
             </svg>
-            <p>Select an image from the gallery<br>or upload a new one to start editing</p>
+            <p data-i18n="editor.placeholder">Select an image to start editing</p>
           </div>
-          <div class="canvas-container" id="canvasContainer" style="display: none;">
-            <img id="editorImage" src="">
+          <div class="canvas-container" id="canvasContainer">
+            <img id="editorImage" src="" alt="Editor">
           </div>
         </div>
       </section>
 
-      <!-- Preview Panel -->
-      <aside class="preview-panel">
+      <aside class="panel">
         <div class="panel-section">
-          <h3>Device Preview</h3>
-          <div class="device-preview">
-            <div class="device-screen eink-filter" id="deviceScreen">
-              <img id="previewImage" src="" alt="Preview">
+          <div class="panel-title" data-i18n="panel.preview">Device Preview</div>
+          <div class="device-frame">
+            <div class="device-screen" id="deviceScreen">
+              <span class="placeholder-text">200x200</span>
+              <img id="previewImage" src="" style="display:none;">
             </div>
           </div>
-          <p class="device-info">200 x 200px • B/W E-ink</p>
+          <p class="device-label">200 x 200px E-ink</p>
         </div>
 
         <div class="panel-section">
-          <h3>Aspect Ratio</h3>
-          <div class="aspect-options">
-            <button class="aspect-btn selected" data-ratio="1" onclick="setAspectRatio(1)">
-              <div class="ratio">1:1</div>
-              <div class="label">Square</div>
+          <div class="panel-title" data-i18n="panel.aspectRatio">Aspect Ratio</div>
+          <div class="option-grid">
+            <button class="option-btn selected" data-ratio="1" onclick="setAspectRatio(1)">
+              <div class="label">1:1</div>
+              <div class="sublabel" data-i18n="aspect.square">Square</div>
             </button>
-            <button class="aspect-btn" data-ratio="1.333" onclick="setAspectRatio(4/3)">
-              <div class="ratio">4:3</div>
-              <div class="label">Standard</div>
+            <button class="option-btn" data-ratio="1.333" onclick="setAspectRatio(4/3)">
+              <div class="label">4:3</div>
+              <div class="sublabel" data-i18n="aspect.standard">Standard</div>
             </button>
-            <button class="aspect-btn" data-ratio="1.777" onclick="setAspectRatio(16/9)">
-              <div class="ratio">16:9</div>
-              <div class="label">Wide</div>
+            <button class="option-btn" data-ratio="1.777" onclick="setAspectRatio(16/9)">
+              <div class="label">16:9</div>
+              <div class="sublabel" data-i18n="aspect.wide">Wide</div>
             </button>
           </div>
         </div>
 
         <div class="panel-section">
-          <h3>Adjustments</h3>
-          <div class="adjustment-control">
-            <div class="adjustment-label">
-              <span>Brightness</span>
-              <span class="value" id="brightnessValue">0</span>
+          <div class="panel-title" data-i18n="panel.adjustments">Adjustments</div>
+          <div class="control-group">
+            <div class="control-label">
+              <span data-i18n="adjust.brightness">Brightness</span>
+              <span class="control-value" id="brightnessValue">0</span>
             </div>
             <input type="range" class="slider" id="brightness" min="-100" max="100" value="0" oninput="updateAdjustment('brightness')">
           </div>
-          <div class="adjustment-control">
-            <div class="adjustment-label">
-              <span>Contrast</span>
-              <span class="value" id="contrastValue">0</span>
+          <div class="control-group">
+            <div class="control-label">
+              <span data-i18n="adjust.contrast">Contrast</span>
+              <span class="control-value" id="contrastValue">0</span>
             </div>
             <input type="range" class="slider" id="contrast" min="-100" max="100" value="0" oninput="updateAdjustment('contrast')">
-          </div>
-          <div class="adjustment-control">
-            <div class="adjustment-label">
-              <span>Sharpness</span>
-              <span class="value" id="sharpnessValue">0</span>
-            </div>
-            <input type="range" class="slider" id="sharpness" min="0" max="100" value="0" oninput="updateAdjustment('sharpness')">
           </div>
         </div>
 
         <div class="panel-section">
-          <h3>Dithering</h3>
-          <div class="dither-options">
-            <button class="dither-btn selected" data-dither="none" onclick="setDither('none')">None</button>
-            <button class="dither-btn" data-dither="floyd" onclick="setDither('floyd')">Floyd-Steinberg</button>
-            <button class="dither-btn" data-dither="ordered" onclick="setDither('ordered')">Ordered</button>
+          <div class="panel-title" data-i18n="panel.dithering">Dithering</div>
+          <div class="option-grid">
+            <button class="option-btn selected" data-dither="none" onclick="setDither('none')">None</button>
+            <button class="option-btn" data-dither="floyd" onclick="setDither('floyd')">Floyd</button>
+            <button class="option-btn" data-dither="ordered" onclick="setDither('ordered')">Ordered</button>
           </div>
         </div>
 
-        <div class="action-buttons">
-          <button class="btn btn-primary" id="saveBtn" onclick="saveImage()" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            Save to Device
-          </button>
-          <button class="btn btn-secondary" onclick="downloadImage()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Download
-          </button>
+        <div class="panel-actions">
+          <button class="btn btn-primary" id="saveBtn" onclick="saveImage()" disabled data-i18n="panel.saveToDevice">Save to Device</button>
+          <button class="btn btn-secondary" onclick="downloadImage()" data-i18n="panel.download">Download</button>
         </div>
       </aside>
     </main>
 
     <!-- Devices Tab -->
-    <main class="main devices-main" id="devicesTab" style="display: none;">
-      <div class="devices-content">
-        <div class="devices-header">
-          <h2>Your Devices</h2>
-          <p>Manage your connected InkFrame displays</p>
+    <div class="tab-content" id="devicesTab">
+      <div class="devices-page">
+        <div class="page-header">
+          <h2 data-i18n="devices.title">Your Devices</h2>
+          <p data-i18n="devices.subtitle">Manage your connected InkFrame displays</p>
         </div>
 
-        <div class="devices-list" id="devicesList">
+        <div id="devicesList">
           <div class="device-card empty">
             <div class="device-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
             </div>
-            <h3>No devices connected</h3>
-            <p>Set up your InkFrame device and it will appear here automatically</p>
+            <h3 data-i18n="devices.noDevices">No devices connected</h3>
+            <p data-i18n="devices.noDevicesDesc">Link your InkFrame device below</p>
           </div>
         </div>
 
-        <div class="link-device-section">
-          <h3>Link a Device</h3>
-          <p>Enter your device ID to link it to your account. <strong>Find your Device ID on your InkFrame display</strong> - it's shown on the dashboard screen (e.g., "abc123de").</p>
+        <div class="link-section">
+          <h3 data-i18n="devices.linkTitle">Link a Device</h3>
+          <p data-i18n="devices.linkDesc">Enter the Device ID shown on your InkFrame display</p>
           <form id="linkDeviceForm" class="link-form">
-            <input type="text" id="deviceIdInput" placeholder="Device ID from display (e.g., abc123de)" required>
-            <button type="submit" class="btn btn-primary">Link Device</button>
+            <input type="text" id="deviceIdInput" data-i18n-placeholder="devices.deviceIdPlaceholder" placeholder="Device ID (e.g., abc123de)" required>
+            <button type="submit" class="btn btn-primary" data-i18n="devices.linkBtn">Link</button>
           </form>
-          <div class="link-help">
-            <p><strong>Can't see the Device ID?</strong></p>
+          <div class="help-box">
+            <h4 data-i18n="devices.helpTitle">Where to find Device ID?</h4>
             <ol>
-              <li>Make sure your InkFrame is powered on and connected to WiFi</li>
-              <li>Press the BOOT button to switch to Dashboard mode</li>
-              <li>The Device ID is shown near the top of the display</li>
-              <li>Also check the Serial Monitor (115200 baud) for "Device ID: ..."</li>
+              <li data-i18n="devices.help1">Power on your InkFrame</li>
+              <li data-i18n="devices.help2">Press BOOT button for Dashboard</li>
+              <li data-i18n="devices.help3">Device ID is shown on screen</li>
             </ol>
           </div>
         </div>
       </div>
-    </main>
+    </div>
 
     <!-- Settings Tab -->
-    <main class="main settings-main" id="settingsTab" style="display: none;">
-      <div class="settings-content">
-        <div class="settings-header">
-          <h2>Settings</h2>
-          <p>Configure your InkFrame experience</p>
+    <div class="tab-content" id="settingsTab">
+      <div class="settings-page">
+        <div class="page-header">
+          <h2 data-i18n="settings.title">Settings</h2>
+          <p data-i18n="settings.subtitle">Configure your InkFrame experience</p>
         </div>
 
         <div class="settings-section">
-          <h3>Account</h3>
+          <h3 data-i18n="settings.account">Account</h3>
           <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">Email</span>
-              <span class="setting-value" id="settingsEmail">user@example.com</span>
+            <div>
+              <div class="setting-label" data-i18n="settings.email">Email</div>
+              <div class="setting-value" id="settingsEmail">user@example.com</div>
             </div>
           </div>
           <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">Name</span>
-              <span class="setting-value" id="settingsName">User</span>
+            <div>
+              <div class="setting-label" data-i18n="settings.name">Name</div>
+              <div class="setting-value" id="settingsName">User</div>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="editName()">Edit</button>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h3>Default Device Settings</h3>
-          <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">Image Rotation</span>
-              <span class="setting-desc">How often images change on the display</span>
-            </div>
-            <select id="rotationInterval" onchange="updateDefaultSettings()">
-              <option value="15">Every 15 minutes</option>
-              <option value="30">Every 30 minutes</option>
-              <option value="60" selected>Every hour</option>
-              <option value="360">Every 6 hours</option>
-              <option value="1440">Daily</option>
-            </select>
           </div>
         </div>
 
-        <div class="settings-section danger-zone">
-          <h3>Danger Zone</h3>
+        <div class="settings-section danger">
+          <h3 data-i18n="settings.dangerZone">Danger Zone</h3>
           <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">Delete All Images</span>
-              <span class="setting-desc">Permanently remove all uploaded images</span>
+            <div>
+              <div class="setting-label" data-i18n="settings.signOut">Sign Out</div>
             </div>
-            <button class="btn btn-danger btn-sm" onclick="deleteAllImages()">Delete All</button>
-          </div>
-          <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">Sign Out</span>
-              <span class="setting-desc">Log out of your account</span>
-            </div>
-            <button class="btn btn-secondary btn-sm" onclick="logout()">Sign Out</button>
+            <button class="btn btn-secondary btn-sm" onclick="logout()" data-i18n="settings.signOutBtn">Sign Out</button>
           </div>
         </div>
       </div>
-    </main>
-  </div>
-
-  <!-- Auth View -->
-  <div id="authView" class="auth-container">
-    <div class="auth-card">
-      <h1 id="authTitle">Welcome back</h1>
-      <p class="subtitle" id="authSubtitle">Sign in to manage your InkFrame</p>
-
-      <form id="authForm">
-        <div class="form-group" id="nameGroup" style="display: none;">
-          <label for="name">Name</label>
-          <input type="text" id="name" placeholder="Your name">
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" placeholder="you@example.com" required>
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" placeholder="Enter your password" required>
-        </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;" id="authSubmit">Sign In</button>
-      </form>
-
-      <p class="auth-link">
-        <span id="authToggleText">Don't have an account?</span>
-        <a href="#" onclick="toggleAuthMode(); return false;" id="authToggleLink">Sign up</a>
-      </p>
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
+  <!-- Delete Modal -->
   <div class="modal-overlay" id="deleteModal">
     <div class="modal">
-      <h3>Delete Image?</h3>
-      <p>This will permanently remove the image from your gallery. This action cannot be undone.</p>
+      <h3 data-i18n="modal.deleteTitle">Delete Image?</h3>
+      <p data-i18n="modal.deleteDesc">This action cannot be undone.</p>
       <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-        <button class="btn btn-primary" style="background: var(--error);" onclick="confirmDelete()">Delete</button>
+        <button class="btn btn-secondary" onclick="closeDeleteModal()" data-i18n="modal.cancel">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()" data-i18n="modal.delete">Delete</button>
       </div>
     </div>
   </div>
 
-  <!-- Toast Container -->
+  <!-- Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   <script>
-    // API Configuration - automatically detect environment
+    // ==================== TRANSLATIONS ====================
+    const translations = {
+      en: {
+        'auth.subtitle': 'E-ink Display Manager',
+        'auth.signIn': 'Sign In',
+        'auth.signUp': 'Sign Up',
+        'auth.name': 'Name',
+        'auth.namePlaceholder': 'Your name',
+        'auth.email': 'Email',
+        'auth.emailPlaceholder': 'you@example.com',
+        'auth.password': 'Password',
+        'auth.passwordPlaceholder': 'Enter your password',
+        'auth.noAccount': "Don't have an account?",
+        'auth.hasAccount': 'Already have an account?',
+        'auth.signUpLink': 'Sign up',
+        'auth.signInLink': 'Sign in',
+        'nav.images': 'Images',
+        'nav.devices': 'Devices',
+        'nav.settings': 'Settings',
+        'sidebar.yourImages': 'Your Images',
+        'sidebar.uploadText': 'Drag & drop or <strong>browse</strong>',
+        'sidebar.noImages': 'No images yet',
+        'editor.crop': 'Crop',
+        'editor.adjust': 'Adjust',
+        'editor.reset': 'Reset',
+        'editor.placeholder': 'Select an image to start editing',
+        'panel.preview': 'Device Preview',
+        'panel.aspectRatio': 'Aspect Ratio',
+        'panel.adjustments': 'Adjustments',
+        'panel.dithering': 'Dithering',
+        'panel.saveToDevice': 'Save to Device',
+        'panel.download': 'Download',
+        'aspect.square': 'Square',
+        'aspect.standard': 'Standard',
+        'aspect.wide': 'Wide',
+        'adjust.brightness': 'Brightness',
+        'adjust.contrast': 'Contrast',
+        'devices.title': 'Your Devices',
+        'devices.subtitle': 'Manage your connected InkFrame displays',
+        'devices.noDevices': 'No devices connected',
+        'devices.noDevicesDesc': 'Link your InkFrame device below',
+        'devices.linkTitle': 'Link a Device',
+        'devices.linkDesc': 'Enter the Device ID shown on your InkFrame display',
+        'devices.deviceIdPlaceholder': 'Device ID (e.g., abc123de)',
+        'devices.linkBtn': 'Link',
+        'devices.helpTitle': 'Where to find Device ID?',
+        'devices.help1': 'Power on your InkFrame',
+        'devices.help2': 'Press BOOT button for Dashboard',
+        'devices.help3': 'Device ID is shown on screen',
+        'settings.title': 'Settings',
+        'settings.subtitle': 'Configure your InkFrame experience',
+        'settings.account': 'Account',
+        'settings.email': 'Email',
+        'settings.name': 'Name',
+        'settings.dangerZone': 'Danger Zone',
+        'settings.signOut': 'Sign Out',
+        'settings.signOutBtn': 'Sign Out',
+        'modal.deleteTitle': 'Delete Image?',
+        'modal.deleteDesc': 'This action cannot be undone.',
+        'modal.cancel': 'Cancel',
+        'modal.delete': 'Delete',
+        'toast.welcome': 'Welcome to InkFrame!',
+        'toast.uploaded': 'Image uploaded!',
+        'toast.saved': 'Image saved!',
+        'toast.deleted': 'Image deleted',
+        'toast.linked': 'Device linked!',
+        'toast.error': 'Something went wrong'
+      },
+      pl: {
+        'auth.subtitle': 'Manager wyswietlacza E-ink',
+        'auth.signIn': 'Zaloguj sie',
+        'auth.signUp': 'Zarejestruj sie',
+        'auth.name': 'Imie',
+        'auth.namePlaceholder': 'Twoje imie',
+        'auth.email': 'Email',
+        'auth.emailPlaceholder': 'ty@przyklad.pl',
+        'auth.password': 'Haslo',
+        'auth.passwordPlaceholder': 'Wpisz haslo',
+        'auth.noAccount': 'Nie masz konta?',
+        'auth.hasAccount': 'Masz juz konto?',
+        'auth.signUpLink': 'Zarejestruj sie',
+        'auth.signInLink': 'Zaloguj sie',
+        'nav.images': 'Zdjecia',
+        'nav.devices': 'Urzadzenia',
+        'nav.settings': 'Ustawienia',
+        'sidebar.yourImages': 'Twoje zdjecia',
+        'sidebar.uploadText': 'Przeciagnij lub <strong>wybierz</strong>',
+        'sidebar.noImages': 'Brak zdjec',
+        'editor.crop': 'Przytnij',
+        'editor.adjust': 'Dostosuj',
+        'editor.reset': 'Resetuj',
+        'editor.placeholder': 'Wybierz zdjecie do edycji',
+        'panel.preview': 'Podglad urzadzenia',
+        'panel.aspectRatio': 'Proporcje',
+        'panel.adjustments': 'Korekty',
+        'panel.dithering': 'Dithering',
+        'panel.saveToDevice': 'Zapisz na urzadzeniu',
+        'panel.download': 'Pobierz',
+        'aspect.square': 'Kwadrat',
+        'aspect.standard': 'Standard',
+        'aspect.wide': 'Szeroki',
+        'adjust.brightness': 'Jasnosc',
+        'adjust.contrast': 'Kontrast',
+        'devices.title': 'Twoje urzadzenia',
+        'devices.subtitle': 'Zarzadzaj polaczonymi wyswietlaczami InkFrame',
+        'devices.noDevices': 'Brak polaczonych urzadzen',
+        'devices.noDevicesDesc': 'Polacz swoje urzadzenie InkFrame ponizej',
+        'devices.linkTitle': 'Polacz urzadzenie',
+        'devices.linkDesc': 'Wpisz ID urzadzenia widoczne na wyswietlaczu InkFrame',
+        'devices.deviceIdPlaceholder': 'ID urzadzenia (np. abc123de)',
+        'devices.linkBtn': 'Polacz',
+        'devices.helpTitle': 'Gdzie znalezc ID urzadzenia?',
+        'devices.help1': 'Wlacz InkFrame',
+        'devices.help2': 'Nacisnij przycisk BOOT',
+        'devices.help3': 'ID jest widoczne na ekranie',
+        'settings.title': 'Ustawienia',
+        'settings.subtitle': 'Skonfiguruj swoje InkFrame',
+        'settings.account': 'Konto',
+        'settings.email': 'Email',
+        'settings.name': 'Imie',
+        'settings.dangerZone': 'Strefa niebezpieczna',
+        'settings.signOut': 'Wyloguj sie',
+        'settings.signOutBtn': 'Wyloguj sie',
+        'modal.deleteTitle': 'Usunac zdjecie?',
+        'modal.deleteDesc': 'Tej akcji nie mozna cofnac.',
+        'modal.cancel': 'Anuluj',
+        'modal.delete': 'Usun',
+        'toast.welcome': 'Witaj w InkFrame!',
+        'toast.uploaded': 'Zdjecie przeslane!',
+        'toast.saved': 'Zdjecie zapisane!',
+        'toast.deleted': 'Zdjecie usuniete',
+        'toast.linked': 'Urzadzenie polaczone!',
+        'toast.error': 'Cos poszlo nie tak'
+      },
+      de: {
+        'auth.subtitle': 'E-Ink Display Manager',
+        'auth.signIn': 'Anmelden',
+        'auth.signUp': 'Registrieren',
+        'auth.name': 'Name',
+        'auth.namePlaceholder': 'Dein Name',
+        'auth.email': 'E-Mail',
+        'auth.emailPlaceholder': 'du@beispiel.de',
+        'auth.password': 'Passwort',
+        'auth.passwordPlaceholder': 'Passwort eingeben',
+        'auth.noAccount': 'Noch kein Konto?',
+        'auth.hasAccount': 'Bereits ein Konto?',
+        'auth.signUpLink': 'Registrieren',
+        'auth.signInLink': 'Anmelden',
+        'nav.images': 'Bilder',
+        'nav.devices': 'Gerate',
+        'nav.settings': 'Einstellungen',
+        'sidebar.yourImages': 'Deine Bilder',
+        'sidebar.uploadText': 'Ziehen oder <strong>durchsuchen</strong>',
+        'sidebar.noImages': 'Noch keine Bilder',
+        'editor.crop': 'Zuschneiden',
+        'editor.adjust': 'Anpassen',
+        'editor.reset': 'Zurucksetzen',
+        'editor.placeholder': 'Bild zum Bearbeiten auswahlen',
+        'panel.preview': 'Gerate-Vorschau',
+        'panel.aspectRatio': 'Seitenverhaltnis',
+        'panel.adjustments': 'Anpassungen',
+        'panel.dithering': 'Dithering',
+        'panel.saveToDevice': 'Auf Gerat speichern',
+        'panel.download': 'Herunterladen',
+        'aspect.square': 'Quadrat',
+        'aspect.standard': 'Standard',
+        'aspect.wide': 'Breit',
+        'adjust.brightness': 'Helligkeit',
+        'adjust.contrast': 'Kontrast',
+        'devices.title': 'Deine Gerate',
+        'devices.subtitle': 'Verwalte deine InkFrame-Displays',
+        'devices.noDevices': 'Keine Gerate verbunden',
+        'devices.noDevicesDesc': 'Verbinde dein InkFrame-Gerat unten',
+        'devices.linkTitle': 'Gerat verbinden',
+        'devices.linkDesc': 'Gib die Gerate-ID ein, die auf deinem InkFrame angezeigt wird',
+        'devices.deviceIdPlaceholder': 'Gerate-ID (z.B. abc123de)',
+        'devices.linkBtn': 'Verbinden',
+        'devices.helpTitle': 'Wo finde ich die Gerate-ID?',
+        'devices.help1': 'Schalte dein InkFrame ein',
+        'devices.help2': 'Drucke die BOOT-Taste',
+        'devices.help3': 'Die ID wird auf dem Bildschirm angezeigt',
+        'settings.title': 'Einstellungen',
+        'settings.subtitle': 'Konfiguriere dein InkFrame',
+        'settings.account': 'Konto',
+        'settings.email': 'E-Mail',
+        'settings.name': 'Name',
+        'settings.dangerZone': 'Gefahrenzone',
+        'settings.signOut': 'Abmelden',
+        'settings.signOutBtn': 'Abmelden',
+        'modal.deleteTitle': 'Bild loschen?',
+        'modal.deleteDesc': 'Diese Aktion kann nicht ruckgangig gemacht werden.',
+        'modal.cancel': 'Abbrechen',
+        'modal.delete': 'Loschen',
+        'toast.welcome': 'Willkommen bei InkFrame!',
+        'toast.uploaded': 'Bild hochgeladen!',
+        'toast.saved': 'Bild gespeichert!',
+        'toast.deleted': 'Bild geloscht',
+        'toast.linked': 'Gerat verbunden!',
+        'toast.error': 'Etwas ist schiefgelaufen'
+      },
+      es: {
+        'auth.subtitle': 'Administrador de pantalla E-ink',
+        'auth.signIn': 'Iniciar sesion',
+        'auth.signUp': 'Registrarse',
+        'auth.name': 'Nombre',
+        'auth.namePlaceholder': 'Tu nombre',
+        'auth.email': 'Correo',
+        'auth.emailPlaceholder': 'tu@ejemplo.com',
+        'auth.password': 'Contrasena',
+        'auth.passwordPlaceholder': 'Ingresa tu contrasena',
+        'auth.noAccount': 'No tienes cuenta?',
+        'auth.hasAccount': 'Ya tienes cuenta?',
+        'auth.signUpLink': 'Registrate',
+        'auth.signInLink': 'Inicia sesion',
+        'nav.images': 'Imagenes',
+        'nav.devices': 'Dispositivos',
+        'nav.settings': 'Ajustes',
+        'sidebar.yourImages': 'Tus imagenes',
+        'sidebar.uploadText': 'Arrastra o <strong>busca</strong>',
+        'sidebar.noImages': 'Sin imagenes aun',
+        'editor.crop': 'Recortar',
+        'editor.adjust': 'Ajustar',
+        'editor.reset': 'Restablecer',
+        'editor.placeholder': 'Selecciona una imagen para editar',
+        'panel.preview': 'Vista previa del dispositivo',
+        'panel.aspectRatio': 'Relacion de aspecto',
+        'panel.adjustments': 'Ajustes',
+        'panel.dithering': 'Dithering',
+        'panel.saveToDevice': 'Guardar en dispositivo',
+        'panel.download': 'Descargar',
+        'aspect.square': 'Cuadrado',
+        'aspect.standard': 'Estandar',
+        'aspect.wide': 'Ancho',
+        'adjust.brightness': 'Brillo',
+        'adjust.contrast': 'Contraste',
+        'devices.title': 'Tus dispositivos',
+        'devices.subtitle': 'Administra tus pantallas InkFrame',
+        'devices.noDevices': 'Sin dispositivos conectados',
+        'devices.noDevicesDesc': 'Vincula tu dispositivo InkFrame abajo',
+        'devices.linkTitle': 'Vincular dispositivo',
+        'devices.linkDesc': 'Ingresa el ID del dispositivo mostrado en tu InkFrame',
+        'devices.deviceIdPlaceholder': 'ID del dispositivo (ej. abc123de)',
+        'devices.linkBtn': 'Vincular',
+        'devices.helpTitle': 'Donde encontrar el ID?',
+        'devices.help1': 'Enciende tu InkFrame',
+        'devices.help2': 'Presiona el boton BOOT',
+        'devices.help3': 'El ID se muestra en pantalla',
+        'settings.title': 'Ajustes',
+        'settings.subtitle': 'Configura tu experiencia InkFrame',
+        'settings.account': 'Cuenta',
+        'settings.email': 'Correo',
+        'settings.name': 'Nombre',
+        'settings.dangerZone': 'Zona de peligro',
+        'settings.signOut': 'Cerrar sesion',
+        'settings.signOutBtn': 'Cerrar sesion',
+        'modal.deleteTitle': 'Eliminar imagen?',
+        'modal.deleteDesc': 'Esta accion no se puede deshacer.',
+        'modal.cancel': 'Cancelar',
+        'modal.delete': 'Eliminar',
+        'toast.welcome': 'Bienvenido a InkFrame!',
+        'toast.uploaded': 'Imagen subida!',
+        'toast.saved': 'Imagen guardada!',
+        'toast.deleted': 'Imagen eliminada',
+        'toast.linked': 'Dispositivo vinculado!',
+        'toast.error': 'Algo salio mal'
+      }
+    };
+
+    let currentLang = localStorage.getItem('inkframe_lang') || 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('inkframe_lang', lang);
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === lang.toUpperCase());
+      });
+      applyTranslations();
+    }
+
+    function t(key) {
+      return translations[currentLang]?.[key] || translations['en'][key] || key;
+    }
+
+    function applyTranslations() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.innerHTML = t(key);
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        el.placeholder = t(key);
+      });
+    }
+
+    // ==================== API ====================
     const API_BASE = window.location.hostname === 'localhost'
       ? 'http://localhost:3000/api'
       : window.location.origin + '/api';
 
-    // State
+    // ==================== STATE ====================
     let currentUser = null;
     let currentToken = null;
     let selectedImage = null;
     let cropper = null;
     let isSignUp = false;
     let imageToDelete = null;
+    let adjustments = { brightness: 0, contrast: 0, dither: 'none', aspectRatio: 1 };
 
-    // Adjustments state
-    let adjustments = {
-      brightness: 0,
-      contrast: 0,
-      sharpness: 0,
-      dither: 'none',
-      aspectRatio: 1
-    };
-
-    // Initialize
+    // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', () => {
+      applyTranslations();
       checkAuth();
       setupUploadZone();
+      setupAuthForm();
+      setupLinkForm();
     });
 
-    // Auth Functions
+    // ==================== AUTH ====================
     function checkAuth() {
       const token = localStorage.getItem('inkframe_token');
       const user = localStorage.getItem('inkframe_user');
-
       if (token && user) {
-        currentToken = token;
-        currentUser = JSON.parse(user);
-        showApp();
+        try {
+          currentToken = token;
+          currentUser = JSON.parse(user);
+          showApp();
+        } catch (e) {
+          showAuth();
+        }
       } else {
         showAuth();
       }
     }
 
+    function showAuth() {
+      document.getElementById('authPage').style.display = 'flex';
+      document.getElementById('appContainer').style.display = 'none';
+    }
+
     function showApp() {
-      document.getElementById('authView').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      document.getElementById('userAvatar').textContent = currentUser.name?.[0]?.toUpperCase() || 'U';
+      document.getElementById('authPage').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'block';
+      document.getElementById('userAvatar').textContent = (currentUser.name || currentUser.email || 'U')[0].toUpperCase();
       document.getElementById('userName').textContent = currentUser.name || currentUser.email;
+      document.getElementById('settingsEmail').textContent = currentUser.email || '';
+      document.getElementById('settingsName').textContent = currentUser.name || '';
       loadImages();
     }
 
-    function showAuth() {
-      document.getElementById('authView').style.display = 'flex';
-      document.getElementById('app').style.display = 'none';
-    }
-
-    function toggleAuthMode() {
-      isSignUp = !isSignUp;
-      document.getElementById('authTitle').textContent = isSignUp ? 'Create account' : 'Welcome back';
-      document.getElementById('authSubtitle').textContent = isSignUp ? 'Sign up to start using InkFrame' : 'Sign in to manage your InkFrame';
-      document.getElementById('authSubmit').textContent = isSignUp ? 'Sign Up' : 'Sign In';
-      document.getElementById('authToggleText').textContent = isSignUp ? 'Already have an account?' : "Don't have an account?";
-      document.getElementById('authToggleLink').textContent = isSignUp ? 'Sign in' : 'Sign up';
+    function setAuthMode(mode) {
+      isSignUp = mode === 'register';
+      document.querySelectorAll('.auth-tab').forEach((tab, i) => {
+        tab.classList.toggle('active', (i === 0 && !isSignUp) || (i === 1 && isSignUp));
+      });
       document.getElementById('nameGroup').style.display = isSignUp ? 'block' : 'none';
+      document.getElementById('authSubmit').textContent = t(isSignUp ? 'auth.signUp' : 'auth.signIn');
+      document.getElementById('authFooter').innerHTML = isSignUp
+        ? `<span>${t('auth.hasAccount')}</span> <a href="#" onclick="setAuthMode('login'); return false;">${t('auth.signInLink')}</a>`
+        : `<span>${t('auth.noAccount')}</span> <a href="#" onclick="setAuthMode('register'); return false;">${t('auth.signUpLink')}</a>`;
     }
 
-    document.getElementById('authForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    function setupAuthForm() {
+      document.getElementById('authForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const name = document.getElementById('name').value;
 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const name = document.getElementById('name').value;
+        const endpoint = isSignUp ? '/auth/register' : '/auth/login';
+        const body = isSignUp ? { email, password, name } : { email, password };
 
-      const endpoint = isSignUp ? '/auth/register' : '/auth/login';
-      const body = isSignUp ? { email, password, name } : { email, password };
+        try {
+          const res = await fetch(API_BASE + endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || t('toast.error'));
 
-      try {
-        const res = await fetch(API_BASE + endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || 'Authentication failed');
+          localStorage.setItem('inkframe_token', data.token);
+          localStorage.setItem('inkframe_user', JSON.stringify(data.user));
+          currentToken = data.token;
+          currentUser = data.user;
+          showApp();
+          showToast(t('toast.welcome'), 'success');
+        } catch (error) {
+          showToast(error.message, 'error');
         }
-
-        localStorage.setItem('inkframe_token', data.token);
-        localStorage.setItem('inkframe_user', JSON.stringify(data.user));
-        currentToken = data.token;
-        currentUser = data.user;
-        showApp();
-        showToast('Welcome to InkFrame!', 'success');
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    });
+      });
+    }
 
     function logout() {
       localStorage.removeItem('inkframe_token');
@@ -1429,104 +1585,74 @@
       showAuth();
     }
 
-    // Image Gallery Functions
+    // ==================== TABS ====================
+    function showTab(tab) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === tab + 'Tab');
+      });
+      if (tab === 'devices') loadDevices();
+    }
+
+    // ==================== IMAGES ====================
     async function loadImages() {
       try {
         const res = await fetch(API_BASE + '/images', {
           headers: { 'Authorization': `Bearer ${currentToken}` }
         });
-
         const data = await res.json();
         renderGallery(data.images || []);
       } catch (error) {
-        showToast('Failed to load images', 'error');
+        console.error('Failed to load images:', error);
       }
     }
 
     function renderGallery(images) {
       const gallery = document.getElementById('gallery');
-
       if (images.length === 0) {
-        gallery.innerHTML = `
-          <div class="gallery-empty">
-            <p>No images yet</p>
-            <p>Upload your first image to get started</p>
-          </div>
-        `;
+        gallery.innerHTML = `<div class="gallery-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><p>${t('sidebar.noImages')}</p></div>`;
         return;
       }
-
-      gallery.innerHTML = `
-        <div class="gallery-grid">
-          ${images.map(img => `
-            <div class="gallery-item ${selectedImage?.id === img.id ? 'selected' : ''}"
-                 data-id="${img.id}"
-                 onclick="selectImage('${img.id}', '${API_BASE.replace('/api', '')}${img.url}')">
-              <img src="${API_BASE.replace('/api', '')}${img.url}" alt="${img.title}">
-              <button class="delete-btn" onclick="event.stopPropagation(); showDeleteModal('${img.id}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-          `).join('')}
+      const baseUrl = API_BASE.replace('/api', '');
+      gallery.innerHTML = `<div class="gallery-grid">${images.map(img => `
+        <div class="gallery-item ${selectedImage?.id === img.id ? 'selected' : ''}" data-id="${img.id}" onclick="selectImage('${img.id}', '${baseUrl}${img.url}')">
+          <img src="${baseUrl}${img.url}" alt="${img.title}">
+          <button class="delete-btn" onclick="event.stopPropagation(); showDeleteModal('${img.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
-      `;
+      `).join('')}</div>`;
     }
 
     function selectImage(id, url) {
       selectedImage = { id, url };
-
-      // Update gallery selection
       document.querySelectorAll('.gallery-item').forEach(item => {
         item.classList.toggle('selected', item.dataset.id === id);
       });
-
-      // Show editor
       document.getElementById('editorPlaceholder').style.display = 'none';
       document.getElementById('canvasContainer').style.display = 'block';
       document.getElementById('saveBtn').disabled = false;
-
-      // Load image into editor
       const img = document.getElementById('editorImage');
       img.src = url;
-
-      img.onload = () => {
-        initCropper();
-        updatePreview();
-      };
+      img.onload = () => { initCropper(); updatePreview(); };
     }
 
-    // Upload Functions
+    // ==================== UPLOAD ====================
     function setupUploadZone() {
       const uploadZone = document.getElementById('uploadZone');
       const fileInput = document.getElementById('fileInput');
-
       uploadZone.addEventListener('click', () => fileInput.click());
-
-      uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('dragover');
-      });
-
-      uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('dragover');
-      });
-
+      uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+      uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
       uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-          uploadImage(files[0]);
-        }
+        if (e.dataTransfer.files.length > 0) uploadImage(e.dataTransfer.files[0]);
       });
-
       fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-          uploadImage(e.target.files[0]);
-        }
+        if (e.target.files.length > 0) uploadImage(e.target.files[0]);
       });
     }
 
@@ -1535,77 +1661,45 @@
         showToast('Please select an image file', 'error');
         return;
       }
-
       const formData = new FormData();
       formData.append('image', file);
       formData.append('title', file.name);
-
       try {
-        showToast('Uploading image...', 'info');
-
         const res = await fetch(API_BASE + '/images/upload', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${currentToken}` },
           body: formData
         });
-
         const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || 'Upload failed');
-        }
-
-        showToast('Image uploaded successfully!', 'success');
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        showToast(t('toast.uploaded'), 'success');
         loadImages();
-
-        // Select the new image
-        setTimeout(() => {
-          selectImage(data.image.id, API_BASE.replace('/api', '') + data.image.url);
-        }, 100);
+        setTimeout(() => selectImage(data.image.id, API_BASE.replace('/api', '') + data.image.url), 100);
       } catch (error) {
         showToast(error.message, 'error');
       }
     }
 
-    // Cropper Functions
+    // ==================== CROPPER ====================
     function initCropper() {
-      if (cropper) {
-        cropper.destroy();
-      }
-
+      if (cropper) cropper.destroy();
       const img = document.getElementById('editorImage');
       cropper = new Cropper(img, {
         aspectRatio: adjustments.aspectRatio,
         viewMode: 1,
         guides: true,
-        center: true,
-        highlight: false,
-        background: true,
         autoCropArea: 0.9,
         responsive: true,
-        crop: () => {
-          updatePreview();
-        }
+        crop: () => updatePreview()
       });
     }
 
     function setAspectRatio(ratio) {
       adjustments.aspectRatio = ratio;
-
-      document.querySelectorAll('.aspect-btn').forEach(btn => {
+      document.querySelectorAll('.option-btn[data-ratio]').forEach(btn => {
         btn.classList.toggle('selected', parseFloat(btn.dataset.ratio) === ratio);
       });
-
-      if (cropper) {
-        cropper.setAspectRatio(ratio);
-      }
-    }
-
-    // Tool Functions
-    function setTool(tool) {
-      document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tool === tool);
-      });
+      if (cropper) cropper.setAspectRatio(ratio);
     }
 
     function updateAdjustment(type) {
@@ -1617,115 +1711,65 @@
 
     function setDither(type) {
       adjustments.dither = type;
-      document.querySelectorAll('.dither-btn').forEach(btn => {
+      document.querySelectorAll('.option-btn[data-dither]').forEach(btn => {
         btn.classList.toggle('selected', btn.dataset.dither === type);
       });
       updatePreview();
     }
 
     function resetEdits() {
-      adjustments = {
-        brightness: 0,
-        contrast: 0,
-        sharpness: 0,
-        dither: 'none',
-        aspectRatio: adjustments.aspectRatio
-      };
-
+      adjustments = { brightness: 0, contrast: 0, dither: 'none', aspectRatio: adjustments.aspectRatio };
       document.getElementById('brightness').value = 0;
       document.getElementById('contrast').value = 0;
-      document.getElementById('sharpness').value = 0;
       document.getElementById('brightnessValue').textContent = '0';
       document.getElementById('contrastValue').textContent = '0';
-      document.getElementById('sharpnessValue').textContent = '0';
-
-      document.querySelectorAll('.dither-btn').forEach(btn => {
+      document.querySelectorAll('.option-btn[data-dither]').forEach(btn => {
         btn.classList.toggle('selected', btn.dataset.dither === 'none');
       });
-
-      if (cropper) {
-        cropper.reset();
-      }
-
+      if (cropper) cropper.reset();
       updatePreview();
     }
 
-    // Preview Functions
     function updatePreview() {
       if (!cropper) return;
-
-      const canvas = cropper.getCroppedCanvas({
-        width: 200,
-        height: 200,
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'high'
-      });
-
+      const canvas = cropper.getCroppedCanvas({ width: 200, height: 200 });
       if (!canvas) return;
-
-      // Apply adjustments
       const ctx = canvas.getContext('2d');
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
-
-      // Apply brightness and contrast
       const brightness = adjustments.brightness;
       const contrast = (adjustments.contrast + 100) / 100;
       const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
-
       for (let i = 0; i < data.length; i += 4) {
-        // Convert to grayscale
         const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-
-        // Apply brightness and contrast
         let value = gray + brightness;
         value = factor * (value - 128) + 128;
         value = Math.max(0, Math.min(255, value));
-
         data[i] = data[i + 1] = data[i + 2] = value;
       }
-
-      // Apply dithering if selected
-      if (adjustments.dither === 'floyd') {
-        floydSteinbergDither(imageData);
-      } else if (adjustments.dither === 'ordered') {
-        orderedDither(imageData);
-      }
-
+      if (adjustments.dither === 'floyd') floydSteinbergDither(imageData);
+      else if (adjustments.dither === 'ordered') orderedDither(imageData);
       ctx.putImageData(imageData, 0, 0);
-
-      // Update preview
-      document.getElementById('previewImage').src = canvas.toDataURL();
+      const previewImg = document.getElementById('previewImage');
+      previewImg.src = canvas.toDataURL();
+      previewImg.style.display = 'block';
+      document.querySelector('.device-screen .placeholder-text')?.remove();
     }
 
     function floydSteinbergDither(imageData) {
       const { data, width, height } = imageData;
-
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           const i = (y * width + x) * 4;
           const oldPixel = data[i];
           const newPixel = oldPixel < 128 ? 0 : 255;
           const error = oldPixel - newPixel;
-
           data[i] = data[i + 1] = data[i + 2] = newPixel;
-
-          // Distribute error
-          if (x + 1 < width) {
-            const idx = i + 4;
-            data[idx] = Math.max(0, Math.min(255, data[idx] + error * 7 / 16));
-          }
+          if (x + 1 < width) data[i + 4] = Math.max(0, Math.min(255, data[i + 4] + error * 7 / 16));
           if (y + 1 < height) {
-            if (x > 0) {
-              const idx = ((y + 1) * width + x - 1) * 4;
-              data[idx] = Math.max(0, Math.min(255, data[idx] + error * 3 / 16));
-            }
-            const idx = ((y + 1) * width + x) * 4;
-            data[idx] = Math.max(0, Math.min(255, data[idx] + error * 5 / 16));
-            if (x + 1 < width) {
-              const idx = ((y + 1) * width + x + 1) * 4;
-              data[idx] = Math.max(0, Math.min(255, data[idx] + error * 1 / 16));
-            }
+            if (x > 0) data[((y + 1) * width + x - 1) * 4] = Math.max(0, Math.min(255, data[((y + 1) * width + x - 1) * 4] + error * 3 / 16));
+            data[((y + 1) * width + x) * 4] = Math.max(0, Math.min(255, data[((y + 1) * width + x) * 4] + error * 5 / 16));
+            if (x + 1 < width) data[((y + 1) * width + x + 1) * 4] = Math.max(0, Math.min(255, data[((y + 1) * width + x + 1) * 4] + error * 1 / 16));
           }
         }
       }
@@ -1733,13 +1777,7 @@
 
     function orderedDither(imageData) {
       const { data, width, height } = imageData;
-      const matrix = [
-        [0, 8, 2, 10],
-        [12, 4, 14, 6],
-        [3, 11, 1, 9],
-        [15, 7, 13, 5]
-      ];
-
+      const matrix = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           const i = (y * width + x) * 4;
@@ -1750,63 +1788,23 @@
       }
     }
 
-    // Save Functions
     async function saveImage() {
       if (!cropper || !selectedImage) return;
-
-      const canvas = cropper.getCroppedCanvas({
-        width: 200,
-        height: 200
-      });
-
+      const canvas = cropper.getCroppedCanvas({ width: 200, height: 200 });
       if (!canvas) return;
-
-      // Apply all adjustments
-      const ctx = canvas.getContext('2d');
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-
-      const brightness = adjustments.brightness;
-      const contrast = (adjustments.contrast + 100) / 100;
-      const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
-
-      for (let i = 0; i < data.length; i += 4) {
-        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        let value = gray + brightness;
-        value = factor * (value - 128) + 128;
-        value = Math.max(0, Math.min(255, value));
-        data[i] = data[i + 1] = data[i + 2] = value;
-      }
-
-      if (adjustments.dither === 'floyd') {
-        floydSteinbergDither(imageData);
-      } else if (adjustments.dither === 'ordered') {
-        orderedDither(imageData);
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-
-      // Convert to blob and upload
       canvas.toBlob(async (blob) => {
         const formData = new FormData();
         formData.append('image', blob, 'edited.png');
         formData.append('title', 'Edited Image');
         formData.append('adjustments', JSON.stringify(adjustments));
-
         try {
-          showToast('Saving image...', 'info');
-
           const res = await fetch(API_BASE + '/images/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${currentToken}` },
             body: formData
           });
-
-          if (!res.ok) {
-            throw new Error('Failed to save image');
-          }
-
-          showToast('Image saved to device!', 'success');
+          if (!res.ok) throw new Error('Save failed');
+          showToast(t('toast.saved'), 'success');
           loadImages();
         } catch (error) {
           showToast(error.message, 'error');
@@ -1816,25 +1814,17 @@
 
     function downloadImage() {
       if (!cropper) return;
-
-      const canvas = cropper.getCroppedCanvas({
-        width: 200,
-        height: 200
-      });
-
+      const canvas = cropper.getCroppedCanvas({ width: 200, height: 200 });
       if (!canvas) return;
-
       const link = document.createElement('a');
       link.download = 'inkframe-image.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
-
-      showToast('Image downloaded!', 'success');
     }
 
-    // Delete Functions
-    function showDeleteModal(imageId) {
-      imageToDelete = imageId;
+    // ==================== DELETE ====================
+    function showDeleteModal(id) {
+      imageToDelete = id;
       document.getElementById('deleteModal').classList.add('active');
     }
 
@@ -1845,234 +1835,81 @@
 
     async function confirmDelete() {
       if (!imageToDelete) return;
-
       try {
-        const res = await fetch(API_BASE + `/images/${imageToDelete}`, {
+        await fetch(API_BASE + `/images/${imageToDelete}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${currentToken}` }
         });
-
-        if (!res.ok) {
-          throw new Error('Failed to delete image');
-        }
-
-        showToast('Image deleted', 'success');
-
+        showToast(t('toast.deleted'), 'success');
         if (selectedImage?.id === imageToDelete) {
           selectedImage = null;
           document.getElementById('editorPlaceholder').style.display = 'flex';
           document.getElementById('canvasContainer').style.display = 'none';
           document.getElementById('saveBtn').disabled = true;
-          if (cropper) {
-            cropper.destroy();
-            cropper = null;
-          }
+          if (cropper) { cropper.destroy(); cropper = null; }
         }
-
         loadImages();
       } catch (error) {
-        showToast(error.message, 'error');
+        showToast(t('toast.error'), 'error');
       }
-
       closeDeleteModal();
     }
 
-    // Tab Functions
-    function showTab(tab) {
-      // Update nav links
-      document.querySelectorAll('.header-nav a').forEach(link => {
-        link.classList.toggle('active', link.dataset.tab === tab);
-      });
-
-      // Show/hide tabs
-      document.getElementById('imagesTab').style.display = tab === 'images' ? 'grid' : 'none';
-      document.getElementById('devicesTab').style.display = tab === 'devices' ? 'flex' : 'none';
-      document.getElementById('settingsTab').style.display = tab === 'settings' ? 'flex' : 'none';
-
-      // Load tab-specific data
-      if (tab === 'devices') {
-        loadDevices();
-      } else if (tab === 'settings') {
-        loadSettings();
-      }
-    }
-
-    // Device Functions
+    // ==================== DEVICES ====================
     async function loadDevices() {
       try {
         const res = await fetch(API_BASE + '/devices', {
           headers: { 'Authorization': `Bearer ${currentToken}` }
         });
-
         const data = await res.json();
         renderDevices(data.devices || []);
       } catch (error) {
-        showToast('Failed to load devices', 'error');
+        console.error('Failed to load devices:', error);
       }
     }
 
-    function renderDevices(deviceList) {
+    function renderDevices(devices) {
       const container = document.getElementById('devicesList');
-
-      if (deviceList.length === 0) {
-        container.innerHTML = `
-          <div class="device-card empty">
-            <div class="device-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
-            </div>
-            <h3>No devices connected</h3>
-            <p>Set up your InkFrame device and it will appear here automatically</p>
-          </div>
-        `;
+      if (devices.length === 0) {
+        container.innerHTML = `<div class="device-card empty"><div class="device-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><h3>${t('devices.noDevices')}</h3><p>${t('devices.noDevicesDesc')}</p></div>`;
         return;
       }
-
-      container.innerHTML = deviceList.map(device => {
+      container.innerHTML = devices.map(device => {
         const lastSeen = device.lastSeen ? new Date(device.lastSeen) : null;
-        const isOnline = lastSeen && (Date.now() - lastSeen.getTime()) < 600000; // 10 minutes
-        const lastSeenText = lastSeen ? formatTimeAgo(lastSeen) : 'Never';
-
-        return `
-          <div class="device-card">
-            <div class="device-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
-            </div>
-            <div class="device-info">
-              <h3>InkFrame ${device.displayType || '154_BW'}</h3>
-              <p>ID: ${device.deviceId}</p>
-              <div class="device-status">
-                <span class="dot ${isOnline ? '' : 'offline'}"></span>
-                <span>${isOnline ? 'Online' : 'Last seen ' + lastSeenText}</span>
-              </div>
-            </div>
-            <div class="device-actions">
-              <button class="btn btn-secondary btn-sm" onclick="configureDevice('${device.deviceId}')">Configure</button>
-            </div>
-          </div>
-        `;
+        const isOnline = lastSeen && (Date.now() - lastSeen.getTime()) < 600000;
+        return `<div class="device-card"><div class="device-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div class="device-info"><h3>InkFrame ${device.displayType || '154_BW'}</h3><p>ID: ${device.deviceId}</p><div class="device-status"><span class="status-dot ${isOnline ? '' : 'offline'}"></span><span>${isOnline ? 'Online' : 'Offline'}</span></div></div></div>`;
       }).join('');
     }
 
-    function formatTimeAgo(date) {
-      const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-
-      if (seconds < 60) return 'just now';
-      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
-      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
-      return Math.floor(seconds / 86400) + 'd ago';
-    }
-
-    document.getElementById('linkDeviceForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const deviceId = document.getElementById('deviceIdInput').value.trim();
-      if (!deviceId) return;
-
-      try {
-        const res = await fetch(API_BASE + `/devices/${deviceId}/link`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${currentToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to link device');
-        }
-
-        showToast('Device linked successfully!', 'success');
-        document.getElementById('deviceIdInput').value = '';
-        loadDevices();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    });
-
-    function configureDevice(deviceId) {
-      showToast('Device configuration coming soon!', 'info');
-    }
-
-    // Settings Functions
-    function loadSettings() {
-      document.getElementById('settingsEmail').textContent = currentUser.email;
-      document.getElementById('settingsName').textContent = currentUser.name || 'Not set';
-    }
-
-    function editName() {
-      const newName = prompt('Enter your name:', currentUser.name || '');
-      if (newName !== null && newName.trim()) {
-        currentUser.name = newName.trim();
-        localStorage.setItem('inkframe_user', JSON.stringify(currentUser));
-        document.getElementById('settingsName').textContent = currentUser.name;
-        document.getElementById('userName').textContent = currentUser.name;
-        showToast('Name updated', 'success');
-      }
-    }
-
-    function updateDefaultSettings() {
-      const rotationInterval = document.getElementById('rotationInterval').value;
-      showToast('Settings saved', 'success');
-    }
-
-    async function deleteAllImages() {
-      if (!confirm('Are you sure you want to delete ALL your images? This cannot be undone.')) {
-        return;
-      }
-
-      try {
-        const res = await fetch(API_BASE + '/images', {
-          headers: { 'Authorization': `Bearer ${currentToken}` }
-        });
-
-        const data = await res.json();
-        const images = data.images || [];
-
-        for (const img of images) {
-          await fetch(API_BASE + `/images/${img.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${currentToken}` }
+    function setupLinkForm() {
+      document.getElementById('linkDeviceForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const deviceId = document.getElementById('deviceIdInput').value.trim();
+        if (!deviceId) return;
+        try {
+          const res = await fetch(API_BASE + `/devices/${deviceId}/link`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${currentToken}`, 'Content-Type': 'application/json' }
           });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Link failed');
+          showToast(t('toast.linked'), 'success');
+          document.getElementById('deviceIdInput').value = '';
+          loadDevices();
+        } catch (error) {
+          showToast(error.message, 'error');
         }
-
-        showToast(`Deleted ${images.length} images`, 'success');
-        loadImages();
-      } catch (error) {
-        showToast('Failed to delete images', 'error');
-      }
+      });
     }
 
-    // Toast Functions
+    // ==================== TOAST ====================
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
-      toast.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-          ${type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' :
-            type === 'error' ? '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>' :
-            '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'}
-        </svg>
-        <span>${message}</span>
-      `;
-
+      toast.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">${type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' : type === 'error' ? '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'}</svg><span>${message}</span>`;
       container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100px)';
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
+      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
     }
   </script>
 </body>
