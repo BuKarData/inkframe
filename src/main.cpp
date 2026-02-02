@@ -19,6 +19,7 @@
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <WiFiManager.h>
 #include <Preferences.h>
 #include <HTTPClient.h>
@@ -237,7 +238,8 @@ void advanceImage() {
   String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
   String url = String(API_SERVER) + "/api/device/" + deviceId + "/next-image";
 
-  http.begin(url);
+  http.begin(secureClient, url);
+  http.setTimeout(10000);
   http.POST("");
   http.end();
 
@@ -245,6 +247,16 @@ void advanceImage() {
   if (fetchImage(currentImageIndex)) {
     drawImage();
   }
+}
+
+// ============================================================
+// HTTPS CLIENT HELPER
+// ============================================================
+WiFiClientSecure secureClient;
+
+void setupSecureClient() {
+  // Skip certificate verification (required for ESP32 to connect to HTTPS)
+  secureClient.setInsecure();
 }
 
 // ============================================================
@@ -256,8 +268,10 @@ void registerDevice() {
   HTTPClient http;
   String url = String(API_SERVER) + "/api/devices/register";
 
-  http.begin(url);
+  // Use secure client for HTTPS
+  http.begin(secureClient, url);
   http.addHeader("Content-Type", "application/json");
+  http.setTimeout(10000);  // 10 second timeout
 
   String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
   JsonDocument doc;
@@ -268,14 +282,21 @@ void registerDevice() {
   String payload;
   serializeJson(doc, payload);
 
+  Serial.printf("Registering device ID: %s\n", deviceId.c_str());
+  Serial.printf("URL: %s\n", url.c_str());
+
   int httpCode = http.POST(payload);
 
   if (httpCode == 200 || httpCode == 201) {
-    Serial.println("Device registered successfully");
+    Serial.println("Device registered successfully!");
     String response = http.getString();
     Serial.println(response);
+  } else if (httpCode < 0) {
+    Serial.printf("Connection failed: %s\n", http.errorToString(httpCode).c_str());
   } else {
-    Serial.printf("Registration failed: %d\n", httpCode);
+    Serial.printf("Registration failed with HTTP code: %d\n", httpCode);
+    String response = http.getString();
+    Serial.println(response);
   }
 
   http.end();
@@ -289,7 +310,8 @@ void fetchDeviceSettings() {
   String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
   String url = String(API_SERVER) + "/api/device/" + deviceId + "/image-info";
 
-  http.begin(url);
+  http.begin(secureClient, url);
+  http.setTimeout(10000);
   int httpCode = http.GET();
 
   if (httpCode == 200) {
@@ -306,6 +328,8 @@ void fetchDeviceSettings() {
       Serial.printf("Settings: %d images, current: %d, rotate every %d min\n",
                     totalImages, currentImageIndex, rotateMinutes);
     }
+  } else {
+    Serial.printf("Failed to fetch settings: %d\n", httpCode);
   }
 
   http.end();
@@ -321,7 +345,8 @@ bool fetchImage(int index) {
   String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
   String url = String(API_SERVER) + "/api/device/" + deviceId + "/bitmap?index=" + String(index);
 
-  http.begin(url);
+  http.begin(secureClient, url);
+  http.setTimeout(15000);  // 15 second timeout for image download
 
   // Collect headers we're interested in
   const char* headerKeys[] = {"X-Image-Total", "X-Image-Index", "X-Image-Width", "X-Image-Height"};
@@ -525,6 +550,9 @@ void setupWiFi() {
     Serial.printf("Signal: %d dBm\n", WiFi.RSSI());
 
     wifiConnected = true;
+
+    // Setup secure client for HTTPS
+    setupSecureClient();
 
     // Register device with server
     registerDevice();

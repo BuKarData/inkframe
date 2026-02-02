@@ -908,7 +908,9 @@
   <div id="authPage" class="auth-page">
     <div class="auth-wrapper">
       <div class="auth-logo">
-        <h1>InkFrame</h1>
+        <a href="/web/index.html" style="text-decoration: none;">
+          <h1>InkFrame</h1>
+        </a>
         <p data-i18n="auth.subtitle">E-ink Display Manager</p>
       </div>
 
@@ -938,6 +940,9 @@
           <span data-i18n="auth.noAccount">Don't have an account?</span>
           <a href="#" onclick="setAuthMode('register'); return false;" data-i18n="auth.signUpLink">Sign up</a>
         </div>
+        <div style="text-align: center; margin-top: 1rem;">
+          <a href="/web/index.html" style="color: var(--text-muted); font-size: 0.8rem; text-decoration: none;">&larr; Back to Home</a>
+        </div>
       </div>
     </div>
   </div>
@@ -945,7 +950,7 @@
   <!-- App Container -->
   <div id="appContainer" class="app-container">
     <header class="app-header">
-      <div class="app-logo">InkFrame</div>
+      <a href="/web/index.html" class="app-logo" style="text-decoration: none;">InkFrame</a>
       <nav class="app-nav">
         <button class="nav-btn active" data-tab="images" onclick="showTab('images')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -993,6 +998,7 @@
               <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
             </svg>
             <p data-i18n="sidebar.noImages">No images yet</p>
+            <p style="font-size: 0.75rem; margin-top: 0.5rem;" data-i18n="sidebar.uploadHint">Upload an image to get started</p>
           </div>
         </div>
       </aside>
@@ -1123,8 +1129,9 @@
             <h4 data-i18n="devices.helpTitle">Where to find Device ID?</h4>
             <ol>
               <li data-i18n="devices.help1">Power on your InkFrame</li>
-              <li data-i18n="devices.help2">Press BOOT button for Dashboard</li>
-              <li data-i18n="devices.help3">Device ID is shown on screen</li>
+              <li data-i18n="devices.help2">Connect to WiFi (uses captive portal on first setup)</li>
+              <li data-i18n="devices.help3">Press BOOT button to show Dashboard with Device ID</li>
+              <li data-i18n="devices.help4">Wait a moment for device to register with server</li>
             </ol>
           </div>
         </div>
@@ -1232,8 +1239,9 @@
         'devices.linkBtn': 'Link',
         'devices.helpTitle': 'Where to find Device ID?',
         'devices.help1': 'Power on your InkFrame',
-        'devices.help2': 'Press BOOT button for Dashboard',
-        'devices.help3': 'Device ID is shown on screen',
+        'devices.help2': 'Connect to WiFi (uses captive portal on first setup)',
+        'devices.help3': 'Press BOOT button to show Dashboard with Device ID',
+        'devices.help4': 'Wait a moment for device to register with server',
         'settings.title': 'Settings',
         'settings.subtitle': 'Configure your InkFrame experience',
         'settings.account': 'Account',
@@ -1298,8 +1306,9 @@
         'devices.linkBtn': 'Polacz',
         'devices.helpTitle': 'Gdzie znalezc ID urzadzenia?',
         'devices.help1': 'Wlacz InkFrame',
-        'devices.help2': 'Nacisnij przycisk BOOT',
-        'devices.help3': 'ID jest widoczne na ekranie',
+        'devices.help2': 'Polacz z WiFi (portal konfiguracyjny przy pierwszym uzyciu)',
+        'devices.help3': 'Nacisnij BOOT aby wyswietlic Dashboard z ID urzadzenia',
+        'devices.help4': 'Poczekaj chwile na rejestracje urzadzenia na serwerze',
         'settings.title': 'Ustawienia',
         'settings.subtitle': 'Skonfiguruj swoje InkFrame',
         'settings.account': 'Konto',
@@ -1364,8 +1373,9 @@
         'devices.linkBtn': 'Verbinden',
         'devices.helpTitle': 'Wo finde ich die Gerate-ID?',
         'devices.help1': 'Schalte dein InkFrame ein',
-        'devices.help2': 'Drucke die BOOT-Taste',
-        'devices.help3': 'Die ID wird auf dem Bildschirm angezeigt',
+        'devices.help2': 'Verbinde mit WiFi (Captive Portal beim ersten Setup)',
+        'devices.help3': 'Drucke BOOT um Dashboard mit Gerate-ID anzuzeigen',
+        'devices.help4': 'Warte einen Moment bis das Gerat beim Server registriert ist',
         'settings.title': 'Einstellungen',
         'settings.subtitle': 'Konfiguriere dein InkFrame',
         'settings.account': 'Konto',
@@ -1430,8 +1440,9 @@
         'devices.linkBtn': 'Vincular',
         'devices.helpTitle': 'Donde encontrar el ID?',
         'devices.help1': 'Enciende tu InkFrame',
-        'devices.help2': 'Presiona el boton BOOT',
-        'devices.help3': 'El ID se muestra en pantalla',
+        'devices.help2': 'Conecta a WiFi (portal cautivo en primera configuracion)',
+        'devices.help3': 'Presiona BOOT para mostrar Dashboard con ID del dispositivo',
+        'devices.help4': 'Espera un momento a que el dispositivo se registre en el servidor',
         'settings.title': 'Ajustes',
         'settings.subtitle': 'Configura tu experiencia InkFrame',
         'settings.account': 'Cuenta',
@@ -1483,6 +1494,11 @@
     const API_BASE = window.location.hostname === 'localhost'
       ? 'http://localhost:3000/api'
       : window.location.origin + '/api';
+
+    // Base URL for static files (uploads, etc)
+    const STATIC_BASE = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : window.location.origin;
 
     // ==================== STATE ====================
     let currentUser = null;
