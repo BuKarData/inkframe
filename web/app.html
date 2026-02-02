@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InkFrame — Image Manager</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Cropper.js for image cropping -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+
+  <style>
+    :root {
+      --ink: #0a0a0a;
+      --paper: #faf9f7;
+      --paper-warm: #f5f3ef;
+      --accent: #c41e3a;
+      --gray-100: #f7f6f4;
+      --gray-200: #e8e6e1;
+      --gray-300: #d4d1cc;
+      --gray-400: #a8a5a0;
+      --gray-500: #8a8680;
+      --gray-600: #6b6862;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --sans: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--gray-100);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header-nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .header-nav a {
+      color: var(--gray-400);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .header-nav a:hover, .header-nav a.active {
+      color: var(--paper);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    /* Main Layout */
+    .main {
+      display: grid;
+      grid-template-columns: 300px 1fr 350px;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* Sidebar - Gallery */
+    .sidebar {
+      background: var(--paper);
+      border-right: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .sidebar-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .upload-zone {
+      border: 2px dashed var(--gray-300);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(196, 30, 58, 0.05);
+    }
+
+    .upload-zone svg {
+      width: 32px;
+      height: 32px;
+      color: var(--gray-400);
+      margin-bottom: 0.5rem;
+    }
+
+    .upload-zone p {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+    }
+
+    .upload-zone span {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .gallery {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .gallery-item {
+      aspect-ratio: 1;
+      background: var(--gray-200);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .gallery-item:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .gallery-item.selected {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .gallery-item .delete-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      background: rgba(0,0,0,0.6);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gallery-item:hover .delete-btn {
+      opacity: 1;
+    }
+
+    .gallery-empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-500);
+    }
+
+    /* Editor Area */
+    .editor {
+      background: var(--gray-100);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-toolbar {
+      background: var(--paper);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .tool-group {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .tool-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tool-btn:hover {
+      background: var(--gray-100);
+      color: var(--ink);
+    }
+
+    .tool-btn.active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .tool-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .editor-canvas {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .canvas-container {
+      max-width: 100%;
+      max-height: 100%;
+      background: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    .canvas-container img {
+      max-width: 100%;
+      max-height: 60vh;
+      display: block;
+    }
+
+    .editor-placeholder {
+      text-align: center;
+      color: var(--gray-500);
+    }
+
+    .editor-placeholder svg {
+      width: 64px;
+      height: 64px;
+      color: var(--gray-300);
+      margin-bottom: 1rem;
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+      background: var(--paper);
+      border-left: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-section {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .panel-section h3 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gray-500);
+      margin-bottom: 1rem;
+    }
+
+    /* Device Preview */
+    .device-preview {
+      background: var(--ink);
+      border-radius: 16px;
+      padding: 12px;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .device-screen {
+      background: var(--paper);
+      border-radius: 6px;
+      aspect-ratio: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .device-screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .device-screen.eink-filter img {
+      filter: grayscale(100%) contrast(1.2);
+    }
+
+    .device-info {
+      text-align: center;
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--gray-400);
+    }
+
+    /* Adjustment Controls */
+    .adjustment-control {
+      margin-bottom: 1.25rem;
+    }
+
+    .adjustment-control:last-child {
+      margin-bottom: 0;
+    }
+
+    .adjustment-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .adjustment-label span {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+
+    .adjustment-label .value {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+
+    .slider {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 4px;
+      background: var(--gray-200);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--ink);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Aspect Ratio Selector */
+    .aspect-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .aspect-btn {
+      padding: 0.75rem 0.5rem;
+      border: 1px solid var(--gray-200);
+      background: var(--paper);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .aspect-btn:hover {
+      border-color: var(--gray-400);
+    }
+
+    .aspect-btn.selected {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .aspect-btn .ratio {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .aspect-btn .label {
+      font-size: 0.625rem;
+      color: var(--gray-500);
+      margin-top: 0.25rem;
+    }
+
+    .aspect-btn.selected .label {
+      color: var(--gray-400);
+    }
+
+    /* Dither Options */
+    .dither-options {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .dither-btn {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid var(--gray-200);
+      background: var(--paper);
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .dither-btn:hover {
+      border-color: var(--gray-400);
+    }
+
+    .dither-btn.selected {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      padding: 1.5rem;
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent);
+    }
+
+    .btn-primary:disabled {
+      background: var(--gray-300);
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--paper);
+      color: var(--ink);
+      border: 1px solid var(--gray-200);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-100);
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .toast {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success {
+      background: var(--success);
+    }
+
+    .toast.error {
+      background: var(--error);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--paper);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal p {
+      color: var(--gray-600);
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    /* Auth Forms */
+    .auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gray-100);
+    }
+
+    .auth-card {
+      background: var(--paper);
+      padding: 3rem;
+      border-radius: 16px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .auth-card h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .auth-card .subtitle {
+      color: var(--gray-500);
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--ink);
+    }
+
+    .auth-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--gray-500);
+    }
+
+    .auth-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* Cropper styles */
+    .cropper-container {
+      max-height: 60vh;
+    }
+
+    .cropper-view-box,
+    .cropper-face {
+      border-radius: 0;
+    }
+
+    /* Loading state */
+    .loading {
+      position: relative;
+      pointer-events: none;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--gray-200);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Devices Tab */
+    .devices-main, .settings-main {
+      display: flex;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .devices-content, .settings-content {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    .devices-header, .settings-header {
+      margin-bottom: 2rem;
+    }
+
+    .devices-header h2, .settings-header h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .devices-header p, .settings-header p {
+      color: var(--gray-500);
+    }
+
+    .devices-list {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .device-card {
+      background: var(--paper);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .device-card.empty {
+      flex-direction: column;
+      text-align: center;
+      padding: 3rem;
+      border: 2px dashed var(--gray-200);
+      background: transparent;
+    }
+
+    .device-card.empty .device-icon {
+      color: var(--gray-300);
+    }
+
+    .device-card.empty h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .device-card.empty p {
+      color: var(--gray-500);
+      font-size: 0.875rem;
+    }
+
+    .device-info {
+      flex: 1;
+    }
+
+    .device-info h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .device-info p {
+      color: var(--gray-500);
+      font-size: 0.875rem;
+    }
+
+    .device-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .device-status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .device-status .dot.offline {
+      background: var(--gray-400);
+    }
+
+    .device-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .link-device-section {
+      background: var(--paper);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .link-device-section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .link-device-section p {
+      color: var(--gray-500);
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .link-form {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .link-form input {
+      flex: 1;
+      padding: 0.875rem 1rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-size: 1rem;
+    }
+
+    .link-form input:focus {
+      outline: none;
+      border-color: var(--ink);
+    }
+
+    .link-help {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--gray-100);
+      border-radius: 8px;
+      font-size: 0.875rem;
+    }
+
+    .link-help p {
+      margin-bottom: 0.75rem;
+      color: var(--ink);
+    }
+
+    .link-help ol {
+      margin-left: 1.25rem;
+      color: var(--gray-600);
+    }
+
+    .link-help li {
+      margin-bottom: 0.5rem;
+    }
+
+    /* Settings Tab */
+    .settings-section {
+      background: var(--paper);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .settings-section h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .setting-item:first-of-type {
+      padding-top: 0;
+    }
+
+    .setting-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .setting-label {
+      font-weight: 500;
+    }
+
+    .setting-value {
+      color: var(--gray-500);
+      font-size: 0.875rem;
+    }
+
+    .setting-desc {
+      color: var(--gray-500);
+      font-size: 0.75rem;
+    }
+
+    .settings-section select {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      background: white;
+      cursor: pointer;
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+    }
+
+    .btn-danger {
+      background: var(--error);
+      color: white;
+      border: none;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .danger-zone {
+      border: 1px solid var(--error);
+    }
+
+    .danger-zone h3 {
+      color: var(--error);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .main {
+        grid-template-columns: 250px 1fr 300px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .preview-panel {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- App View -->
+  <div id="app" style="display: none;">
+    <header class="header">
+      <span class="logo">InkFrame</span>
+      <nav class="header-nav">
+        <a href="#" class="active" data-tab="images" onclick="showTab('images')">Images</a>
+        <a href="#" data-tab="devices" onclick="showTab('devices')">Devices</a>
+        <a href="#" data-tab="settings" onclick="showTab('settings')">Settings</a>
+      </nav>
+      <div class="user-menu" onclick="logout()">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <span id="userName">User</span>
+      </div>
+    </header>
+
+    <main class="main" id="imagesTab">
+      <!-- Sidebar Gallery -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>Your Images</h2>
+          <div class="upload-zone" id="uploadZone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p>Drag & drop or <span>browse</span></p>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" hidden>
+        </div>
+        <div class="gallery" id="gallery">
+          <div class="gallery-empty">
+            <p>No images yet</p>
+            <p>Upload your first image to get started</p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Editor -->
+      <section class="editor">
+        <div class="editor-toolbar">
+          <div class="tool-group">
+            <button class="tool-btn active" data-tool="crop" onclick="setTool('crop')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/>
+                <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/>
+              </svg>
+              Crop
+            </button>
+            <button class="tool-btn" data-tool="adjust" onclick="setTool('adjust')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Adjust
+            </button>
+          </div>
+          <div class="tool-group">
+            <button class="tool-btn" onclick="resetEdits()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div class="editor-canvas" id="editorCanvas">
+          <div class="editor-placeholder" id="editorPlaceholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p>Select an image from the gallery<br>or upload a new one to start editing</p>
+          </div>
+          <div class="canvas-container" id="canvasContainer" style="display: none;">
+            <img id="editorImage" src="">
+          </div>
+        </div>
+      </section>
+
+      <!-- Preview Panel -->
+      <aside class="preview-panel">
+        <div class="panel-section">
+          <h3>Device Preview</h3>
+          <div class="device-preview">
+            <div class="device-screen eink-filter" id="deviceScreen">
+              <img id="previewImage" src="" alt="Preview">
+            </div>
+          </div>
+          <p class="device-info">200 x 200px • B/W E-ink</p>
+        </div>
+
+        <div class="panel-section">
+          <h3>Aspect Ratio</h3>
+          <div class="aspect-options">
+            <button class="aspect-btn selected" data-ratio="1" onclick="setAspectRatio(1)">
+              <div class="ratio">1:1</div>
+              <div class="label">Square</div>
+            </button>
+            <button class="aspect-btn" data-ratio="1.333" onclick="setAspectRatio(4/3)">
+              <div class="ratio">4:3</div>
+              <div class="label">Standard</div>
+            </button>
+            <button class="aspect-btn" data-ratio="1.777" onclick="setAspectRatio(16/9)">
+              <div class="ratio">16:9</div>
+              <div class="label">Wide</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3>Adjustments</h3>
+          <div class="adjustment-control">
+            <div class="adjustment-label">
+              <span>Brightness</span>
+              <span class="value" id="brightnessValue">0</span>
+            </div>
+            <input type="range" class="slider" id="brightness" min="-100" max="100" value="0" oninput="updateAdjustment('brightness')">
+          </div>
+          <div class="adjustment-control">
+            <div class="adjustment-label">
+              <span>Contrast</span>
+              <span class="value" id="contrastValue">0</span>
+            </div>
+            <input type="range" class="slider" id="contrast" min="-100" max="100" value="0" oninput="updateAdjustment('contrast')">
+          </div>
+          <div class="adjustment-control">
+            <div class="adjustment-label">
+              <span>Sharpness</span>
+              <span class="value" id="sharpnessValue">0</span>
+            </div>
+            <input type="range" class="slider" id="sharpness" min="0" max="100" value="0" oninput="updateAdjustment('sharpness')">
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3>Dithering</h3>
+          <div class="dither-options">
+            <button class="dither-btn selected" data-dither="none" onclick="setDither('none')">None</button>
+            <button class="dither-btn" data-dither="floyd" onclick="setDither('floyd')">Floyd-Steinberg</button>
+            <button class="dither-btn" data-dither="ordered" onclick="setDither('ordered')">Ordered</button>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="saveBtn" onclick="saveImage()" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Save to Device
+          </button>
+          <button class="btn btn-secondary" onclick="downloadImage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download
+          </button>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Devices Tab -->
+    <main class="main devices-main" id="devicesTab" style="display: none;">
+      <div class="devices-content">
+        <div class="devices-header">
+          <h2>Your Devices</h2>
+          <p>Manage your connected InkFrame displays</p>
+        </div>
+
+        <div class="devices-list" id="devicesList">
+          <div class="device-card empty">
+            <div class="device-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <h3>No devices connected</h3>
+            <p>Set up your InkFrame device and it will appear here automatically</p>
+          </div>
+        </div>
+
+        <div class="link-device-section">
+          <h3>Link a Device</h3>
+          <p>Enter your device ID to link it to your account. <strong>Find your Device ID on your InkFrame display</strong> - it's shown on the dashboard screen (e.g., "abc123de").</p>
+          <form id="linkDeviceForm" class="link-form">
+            <input type="text" id="deviceIdInput" placeholder="Device ID from display (e.g., abc123de)" required>
+            <button type="submit" class="btn btn-primary">Link Device</button>
+          </form>
+          <div class="link-help">
+            <p><strong>Can't see the Device ID?</strong></p>
+            <ol>
+              <li>Make sure your InkFrame is powered on and connected to WiFi</li>
+              <li>Press the BOOT button to switch to Dashboard mode</li>
+              <li>The Device ID is shown near the top of the display</li>
+              <li>Also check the Serial Monitor (115200 baud) for "Device ID: ..."</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Settings Tab -->
+    <main class="main settings-main" id="settingsTab" style="display: none;">
+      <div class="settings-content">
+        <div class="settings-header">
+          <h2>Settings</h2>
+          <p>Configure your InkFrame experience</p>
+        </div>
+
+        <div class="settings-section">
+          <h3>Account</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Email</span>
+              <span class="setting-value" id="settingsEmail">user@example.com</span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Name</span>
+              <span class="setting-value" id="settingsName">User</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="editName()">Edit</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Default Device Settings</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Image Rotation</span>
+              <span class="setting-desc">How often images change on the display</span>
+            </div>
+            <select id="rotationInterval" onchange="updateDefaultSettings()">
+              <option value="15">Every 15 minutes</option>
+              <option value="30">Every 30 minutes</option>
+              <option value="60" selected>Every hour</option>
+              <option value="360">Every 6 hours</option>
+              <option value="1440">Daily</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section danger-zone">
+          <h3>Danger Zone</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Delete All Images</span>
+              <span class="setting-desc">Permanently remove all uploaded images</span>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteAllImages()">Delete All</button>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Sign Out</span>
+              <span class="setting-desc">Log out of your account</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="logout()">Sign Out</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Auth View -->
+  <div id="authView" class="auth-container">
+    <div class="auth-card">
+      <h1 id="authTitle">Welcome back</h1>
+      <p class="subtitle" id="authSubtitle">Sign in to manage your InkFrame</p>
+
+      <form id="authForm">
+        <div class="form-group" id="nameGroup" style="display: none;">
+          <label for="name">Name</label>
+          <input type="text" id="name" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="authSubmit">Sign In</button>
+      </form>
+
+      <p class="auth-link">
+        <span id="authToggleText">Don't have an account?</span>
+        <a href="#" onclick="toggleAuthMode(); return false;" id="authToggleLink">Sign up</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+      <h3>Delete Image?</h3>
+      <p>This will permanently remove the image from your gallery. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-primary" style="background: var(--error);" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <script>
+    // API Configuration - automatically detect environment
+    const API_BASE = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000/api'
+      : window.location.origin + '/api';
+
+    // State
+    let currentUser = null;
+    let currentToken = null;
+    let selectedImage = null;
+    let cropper = null;
+    let isSignUp = false;
+    let imageToDelete = null;
+
+    // Adjustments state
+    let adjustments = {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 0,
+      dither: 'none',
+      aspectRatio: 1
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      setupUploadZone();
+    });
+
+    // Auth Functions
+    function checkAuth() {
+      const token = localStorage.getItem('inkframe_token');
+      const user = localStorage.getItem('inkframe_user');
+
+      if (token && user) {
+        currentToken = token;
+        currentUser = JSON.parse(user);
+        showApp();
+      } else {
+        showAuth();
+      }
+    }
+
+    function showApp() {
+      document.getElementById('authView').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('userAvatar').textContent = currentUser.name?.[0]?.toUpperCase() || 'U';
+      document.getElementById('userName').textContent = currentUser.name || currentUser.email;
+      loadImages();
+    }
+
+    function showAuth() {
+      document.getElementById('authView').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+    }
+
+    function toggleAuthMode() {
+      isSignUp = !isSignUp;
+      document.getElementById('authTitle').textContent = isSignUp ? 'Create account' : 'Welcome back';
+      document.getElementById('authSubtitle').textContent = isSignUp ? 'Sign up to start using InkFrame' : 'Sign in to manage your InkFrame';
+      document.getElementById('authSubmit').textContent = isSignUp ? 'Sign Up' : 'Sign In';
+      document.getElementById('authToggleText').textContent = isSignUp ? 'Already have an account?' : "Don't have an account?";
+      document.getElementById('authToggleLink').textContent = isSignUp ? 'Sign in' : 'Sign up';
+      document.getElementById('nameGroup').style.display = isSignUp ? 'block' : 'none';
+    }
+
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const name = document.getElementById('name').value;
+
+      const endpoint = isSignUp ? '/auth/register' : '/auth/login';
+      const body = isSignUp ? { email, password, name } : { email, password };
+
+      try {
+        const res = await fetch(API_BASE + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Authentication failed');
+        }
+
+        localStorage.setItem('inkframe_token', data.token);
+        localStorage.setItem('inkframe_user', JSON.stringify(data.user));
+        currentToken = data.token;
+        currentUser = data.user;
+        showApp();
+        showToast('Welcome to InkFrame!', 'success');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem('inkframe_token');
+      localStorage.removeItem('inkframe_user');
+      currentToken = null;
+      currentUser = null;
+      showAuth();
+    }
+
+    // Image Gallery Functions
+    async function loadImages() {
+      try {
+        const res = await fetch(API_BASE + '/images', {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        const data = await res.json();
+        renderGallery(data.images || []);
+      } catch (error) {
+        showToast('Failed to load images', 'error');
+      }
+    }
+
+    function renderGallery(images) {
+      const gallery = document.getElementById('gallery');
+
+      if (images.length === 0) {
+        gallery.innerHTML = `
+          <div class="gallery-empty">
+            <p>No images yet</p>
+            <p>Upload your first image to get started</p>
+          </div>
+        `;
+        return;
+      }
+
+      gallery.innerHTML = `
+        <div class="gallery-grid">
+          ${images.map(img => `
+            <div class="gallery-item ${selectedImage?.id === img.id ? 'selected' : ''}"
+                 data-id="${img.id}"
+                 onclick="selectImage('${img.id}', '${API_BASE.replace('/api', '')}${img.url}')">
+              <img src="${API_BASE.replace('/api', '')}${img.url}" alt="${img.title}">
+              <button class="delete-btn" onclick="event.stopPropagation(); showDeleteModal('${img.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function selectImage(id, url) {
+      selectedImage = { id, url };
+
+      // Update gallery selection
+      document.querySelectorAll('.gallery-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.id === id);
+      });
+
+      // Show editor
+      document.getElementById('editorPlaceholder').style.display = 'none';
+      document.getElementById('canvasContainer').style.display = 'block';
+      document.getElementById('saveBtn').disabled = false;
+
+      // Load image into editor
+      const img = document.getElementById('editorImage');
+      img.src = url;
+
+      img.onload = () => {
+        initCropper();
+        updatePreview();
+      };
+    }
+
+    // Upload Functions
+    function setupUploadZone() {
+      const uploadZone = document.getElementById('uploadZone');
+      const fileInput = document.getElementById('fileInput');
+
+      uploadZone.addEventListener('click', () => fileInput.click());
+
+      uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+      });
+
+      uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+      });
+
+      uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          uploadImage(files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          uploadImage(e.target.files[0]);
+        }
+      });
+    }
+
+    async function uploadImage(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('title', file.name);
+
+      try {
+        showToast('Uploading image...', 'info');
+
+        const res = await fetch(API_BASE + '/images/upload', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${currentToken}` },
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Upload failed');
+        }
+
+        showToast('Image uploaded successfully!', 'success');
+        loadImages();
+
+        // Select the new image
+        setTimeout(() => {
+          selectImage(data.image.id, API_BASE.replace('/api', '') + data.image.url);
+        }, 100);
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    // Cropper Functions
+    function initCropper() {
+      if (cropper) {
+        cropper.destroy();
+      }
+
+      const img = document.getElementById('editorImage');
+      cropper = new Cropper(img, {
+        aspectRatio: adjustments.aspectRatio,
+        viewMode: 1,
+        guides: true,
+        center: true,
+        highlight: false,
+        background: true,
+        autoCropArea: 0.9,
+        responsive: true,
+        crop: () => {
+          updatePreview();
+        }
+      });
+    }
+
+    function setAspectRatio(ratio) {
+      adjustments.aspectRatio = ratio;
+
+      document.querySelectorAll('.aspect-btn').forEach(btn => {
+        btn.classList.toggle('selected', parseFloat(btn.dataset.ratio) === ratio);
+      });
+
+      if (cropper) {
+        cropper.setAspectRatio(ratio);
+      }
+    }
+
+    // Tool Functions
+    function setTool(tool) {
+      document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tool === tool);
+      });
+    }
+
+    function updateAdjustment(type) {
+      const value = document.getElementById(type).value;
+      adjustments[type] = parseInt(value);
+      document.getElementById(type + 'Value').textContent = value;
+      updatePreview();
+    }
+
+    function setDither(type) {
+      adjustments.dither = type;
+      document.querySelectorAll('.dither-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.dither === type);
+      });
+      updatePreview();
+    }
+
+    function resetEdits() {
+      adjustments = {
+        brightness: 0,
+        contrast: 0,
+        sharpness: 0,
+        dither: 'none',
+        aspectRatio: adjustments.aspectRatio
+      };
+
+      document.getElementById('brightness').value = 0;
+      document.getElementById('contrast').value = 0;
+      document.getElementById('sharpness').value = 0;
+      document.getElementById('brightnessValue').textContent = '0';
+      document.getElementById('contrastValue').textContent = '0';
+      document.getElementById('sharpnessValue').textContent = '0';
+
+      document.querySelectorAll('.dither-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.dither === 'none');
+      });
+
+      if (cropper) {
+        cropper.reset();
+      }
+
+      updatePreview();
+    }
+
+    // Preview Functions
+    function updatePreview() {
+      if (!cropper) return;
+
+      const canvas = cropper.getCroppedCanvas({
+        width: 200,
+        height: 200,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
+      });
+
+      if (!canvas) return;
+
+      // Apply adjustments
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      // Apply brightness and contrast
+      const brightness = adjustments.brightness;
+      const contrast = (adjustments.contrast + 100) / 100;
+      const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+
+      for (let i = 0; i < data.length; i += 4) {
+        // Convert to grayscale
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+
+        // Apply brightness and contrast
+        let value = gray + brightness;
+        value = factor * (value - 128) + 128;
+        value = Math.max(0, Math.min(255, value));
+
+        data[i] = data[i + 1] = data[i + 2] = value;
+      }
+
+      // Apply dithering if selected
+      if (adjustments.dither === 'floyd') {
+        floydSteinbergDither(imageData);
+      } else if (adjustments.dither === 'ordered') {
+        orderedDither(imageData);
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      // Update preview
+      document.getElementById('previewImage').src = canvas.toDataURL();
+    }
+
+    function floydSteinbergDither(imageData) {
+      const { data, width, height } = imageData;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4;
+          const oldPixel = data[i];
+          const newPixel = oldPixel < 128 ? 0 : 255;
+          const error = oldPixel - newPixel;
+
+          data[i] = data[i + 1] = data[i + 2] = newPixel;
+
+          // Distribute error
+          if (x + 1 < width) {
+            const idx = i + 4;
+            data[idx] = Math.max(0, Math.min(255, data[idx] + error * 7 / 16));
+          }
+          if (y + 1 < height) {
+            if (x > 0) {
+              const idx = ((y + 1) * width + x - 1) * 4;
+              data[idx] = Math.max(0, Math.min(255, data[idx] + error * 3 / 16));
+            }
+            const idx = ((y + 1) * width + x) * 4;
+            data[idx] = Math.max(0, Math.min(255, data[idx] + error * 5 / 16));
+            if (x + 1 < width) {
+              const idx = ((y + 1) * width + x + 1) * 4;
+              data[idx] = Math.max(0, Math.min(255, data[idx] + error * 1 / 16));
+            }
+          }
+        }
+      }
+    }
+
+    function orderedDither(imageData) {
+      const { data, width, height } = imageData;
+      const matrix = [
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5]
+      ];
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4;
+          const threshold = (matrix[y % 4][x % 4] + 1) * 16;
+          const newPixel = data[i] > threshold ? 255 : 0;
+          data[i] = data[i + 1] = data[i + 2] = newPixel;
+        }
+      }
+    }
+
+    // Save Functions
+    async function saveImage() {
+      if (!cropper || !selectedImage) return;
+
+      const canvas = cropper.getCroppedCanvas({
+        width: 200,
+        height: 200
+      });
+
+      if (!canvas) return;
+
+      // Apply all adjustments
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      const brightness = adjustments.brightness;
+      const contrast = (adjustments.contrast + 100) / 100;
+      const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        let value = gray + brightness;
+        value = factor * (value - 128) + 128;
+        value = Math.max(0, Math.min(255, value));
+        data[i] = data[i + 1] = data[i + 2] = value;
+      }
+
+      if (adjustments.dither === 'floyd') {
+        floydSteinbergDither(imageData);
+      } else if (adjustments.dither === 'ordered') {
+        orderedDither(imageData);
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      // Convert to blob and upload
+      canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append('image', blob, 'edited.png');
+        formData.append('title', 'Edited Image');
+        formData.append('adjustments', JSON.stringify(adjustments));
+
+        try {
+          showToast('Saving image...', 'info');
+
+          const res = await fetch(API_BASE + '/images/upload', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${currentToken}` },
+            body: formData
+          });
+
+          if (!res.ok) {
+            throw new Error('Failed to save image');
+          }
+
+          showToast('Image saved to device!', 'success');
+          loadImages();
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      }, 'image/png');
+    }
+
+    function downloadImage() {
+      if (!cropper) return;
+
+      const canvas = cropper.getCroppedCanvas({
+        width: 200,
+        height: 200
+      });
+
+      if (!canvas) return;
+
+      const link = document.createElement('a');
+      link.download = 'inkframe-image.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      showToast('Image downloaded!', 'success');
+    }
+
+    // Delete Functions
+    function showDeleteModal(imageId) {
+      imageToDelete = imageId;
+      document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+      imageToDelete = null;
+      document.getElementById('deleteModal').classList.remove('active');
+    }
+
+    async function confirmDelete() {
+      if (!imageToDelete) return;
+
+      try {
+        const res = await fetch(API_BASE + `/images/${imageToDelete}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to delete image');
+        }
+
+        showToast('Image deleted', 'success');
+
+        if (selectedImage?.id === imageToDelete) {
+          selectedImage = null;
+          document.getElementById('editorPlaceholder').style.display = 'flex';
+          document.getElementById('canvasContainer').style.display = 'none';
+          document.getElementById('saveBtn').disabled = true;
+          if (cropper) {
+            cropper.destroy();
+            cropper = null;
+          }
+        }
+
+        loadImages();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+
+      closeDeleteModal();
+    }
+
+    // Tab Functions
+    function showTab(tab) {
+      // Update nav links
+      document.querySelectorAll('.header-nav a').forEach(link => {
+        link.classList.toggle('active', link.dataset.tab === tab);
+      });
+
+      // Show/hide tabs
+      document.getElementById('imagesTab').style.display = tab === 'images' ? 'grid' : 'none';
+      document.getElementById('devicesTab').style.display = tab === 'devices' ? 'flex' : 'none';
+      document.getElementById('settingsTab').style.display = tab === 'settings' ? 'flex' : 'none';
+
+      // Load tab-specific data
+      if (tab === 'devices') {
+        loadDevices();
+      } else if (tab === 'settings') {
+        loadSettings();
+      }
+    }
+
+    // Device Functions
+    async function loadDevices() {
+      try {
+        const res = await fetch(API_BASE + '/devices', {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        const data = await res.json();
+        renderDevices(data.devices || []);
+      } catch (error) {
+        showToast('Failed to load devices', 'error');
+      }
+    }
+
+    function renderDevices(deviceList) {
+      const container = document.getElementById('devicesList');
+
+      if (deviceList.length === 0) {
+        container.innerHTML = `
+          <div class="device-card empty">
+            <div class="device-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <h3>No devices connected</h3>
+            <p>Set up your InkFrame device and it will appear here automatically</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = deviceList.map(device => {
+        const lastSeen = device.lastSeen ? new Date(device.lastSeen) : null;
+        const isOnline = lastSeen && (Date.now() - lastSeen.getTime()) < 600000; // 10 minutes
+        const lastSeenText = lastSeen ? formatTimeAgo(lastSeen) : 'Never';
+
+        return `
+          <div class="device-card">
+            <div class="device-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <div class="device-info">
+              <h3>InkFrame ${device.displayType || '154_BW'}</h3>
+              <p>ID: ${device.deviceId}</p>
+              <div class="device-status">
+                <span class="dot ${isOnline ? '' : 'offline'}"></span>
+                <span>${isOnline ? 'Online' : 'Last seen ' + lastSeenText}</span>
+              </div>
+            </div>
+            <div class="device-actions">
+              <button class="btn btn-secondary btn-sm" onclick="configureDevice('${device.deviceId}')">Configure</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatTimeAgo(date) {
+      const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+      return Math.floor(seconds / 86400) + 'd ago';
+    }
+
+    document.getElementById('linkDeviceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const deviceId = document.getElementById('deviceIdInput').value.trim();
+      if (!deviceId) return;
+
+      try {
+        const res = await fetch(API_BASE + `/devices/${deviceId}/link`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to link device');
+        }
+
+        showToast('Device linked successfully!', 'success');
+        document.getElementById('deviceIdInput').value = '';
+        loadDevices();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    });
+
+    function configureDevice(deviceId) {
+      showToast('Device configuration coming soon!', 'info');
+    }
+
+    // Settings Functions
+    function loadSettings() {
+      document.getElementById('settingsEmail').textContent = currentUser.email;
+      document.getElementById('settingsName').textContent = currentUser.name || 'Not set';
+    }
+
+    function editName() {
+      const newName = prompt('Enter your name:', currentUser.name || '');
+      if (newName !== null && newName.trim()) {
+        currentUser.name = newName.trim();
+        localStorage.setItem('inkframe_user', JSON.stringify(currentUser));
+        document.getElementById('settingsName').textContent = currentUser.name;
+        document.getElementById('userName').textContent = currentUser.name;
+        showToast('Name updated', 'success');
+      }
+    }
+
+    function updateDefaultSettings() {
+      const rotationInterval = document.getElementById('rotationInterval').value;
+      showToast('Settings saved', 'success');
+    }
+
+    async function deleteAllImages() {
+      if (!confirm('Are you sure you want to delete ALL your images? This cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE + '/images', {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+
+        const data = await res.json();
+        const images = data.images || [];
+
+        for (const img of images) {
+          await fetch(API_BASE + `/images/${img.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+          });
+        }
+
+        showToast(`Deleted ${images.length} images`, 'success');
+        loadImages();
+      } catch (error) {
+        showToast('Failed to delete images', 'error');
+      }
+    }
+
+    // Toast Functions
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          ${type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' :
+            type === 'error' ? '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>' :
+            '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'}
+        </svg>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

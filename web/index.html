@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InkFrame — Where Art Meets Utility</title>
+  <meta name="description" content="Transform any space with an elegant E-ink display. Beautiful art when idle, powerful assistant on demand.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --ink: #0a0a0a;
+      --paper: #faf9f7;
+      --paper-warm: #f5f3ef;
+      --accent: #c41e3a;
+      --gray-100: #f7f6f4;
+      --gray-200: #e8e6e1;
+      --gray-400: #a8a5a0;
+      --gray-600: #6b6862;
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Typography */
+    h1, h2, h3 {
+      font-family: var(--serif);
+      font-weight: 400;
+      line-height: 1.1;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1.5rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: transparent;
+      transition: all 0.4s ease;
+    }
+
+    nav.scrolled {
+      background: rgba(250, 249, 247, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 1rem 4rem;
+      box-shadow: 0 1px 0 var(--gray-200);
+    }
+
+    .logo {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+      color: var(--ink);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--ink);
+    }
+
+    .nav-cta {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 0.75rem 1.5rem;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: all 0.3s;
+    }
+
+    .nav-cta:hover {
+      background: var(--accent);
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8rem 4rem 4rem 8rem;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards;
+      animation-delay: 0.2s;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 6vw, 5rem);
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards;
+      animation-delay: 0.4s;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-description {
+      font-size: 1.125rem;
+      color: var(--gray-600);
+      max-width: 400px;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards;
+      animation-delay: 0.6s;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards;
+      animation-delay: 0.8s;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 1rem 2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      color: var(--ink);
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s;
+    }
+
+    .btn-secondary:hover {
+      border-bottom-color: var(--ink);
+    }
+
+    .hero-visual {
+      position: relative;
+      background: var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .device-mockup {
+      position: relative;
+      width: 70%;
+      max-width: 400px;
+      opacity: 0;
+      animation: fadeIn 1s ease forwards;
+      animation-delay: 0.5s;
+    }
+
+    .device-frame {
+      background: var(--ink);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 
+        0 50px 100px -20px rgba(0,0,0,0.25),
+        0 30px 60px -30px rgba(0,0,0,0.3);
+    }
+
+    .device-screen {
+      background: var(--paper);
+      border-radius: 8px;
+      aspect-ratio: 4/3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen-content {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .screen-time {
+      font-family: var(--serif);
+      font-size: 3rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    .screen-date {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      margin-top: 0.5rem;
+    }
+
+    .screen-divider {
+      width: 60px;
+      height: 1px;
+      background: var(--gray-200);
+      margin: 1.5rem 0;
+    }
+
+    .screen-weather {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+    }
+
+    .floating-label {
+      position: absolute;
+      background: white;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      opacity: 0;
+      animation: floatIn 0.8s ease forwards;
+    }
+
+    .label-calendar {
+      top: 10%;
+      right: -10%;
+      animation-delay: 1s;
+    }
+
+    .label-tasks {
+      bottom: 20%;
+      left: -5%;
+      animation-delay: 1.2s;
+    }
+
+    .label-art {
+      bottom: 10%;
+      right: -8%;
+      animation-delay: 1.4s;
+    }
+
+    /* Features Section */
+    .features {
+      padding: 8rem 8rem;
+      background: white;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 5rem;
+    }
+
+    .section-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-header h2 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+
+    .section-header p {
+      color: var(--gray-600);
+      font-size: 1.1rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem;
+    }
+
+    .feature-card {
+      padding: 2.5rem;
+      background: var(--gray-100);
+      transition: all 0.4s ease;
+    }
+
+    .feature-card:hover {
+      background: var(--paper-warm);
+      transform: translateY(-8px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--ink);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-card p {
+      color: var(--gray-600);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    /* How It Works */
+    .how-it-works {
+      padding: 8rem;
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .how-it-works .section-header {
+      color: var(--paper);
+    }
+
+    .how-it-works .section-header p {
+      color: var(--gray-400);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      margin-top: 4rem;
+    }
+
+    .step {
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .step::after {
+      content: '';
+      position: absolute;
+      top: 3rem;
+      right: -1rem;
+      width: 2rem;
+      height: 1px;
+      background: var(--gray-600);
+    }
+
+    .step:last-child::after {
+      display: none;
+    }
+
+    .step-number {
+      font-family: var(--serif);
+      font-size: 4rem;
+      font-weight: 400;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 1.5rem;
+    }
+
+    .step h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      color: var(--paper);
+    }
+
+    .step p {
+      color: var(--gray-400);
+      font-size: 0.9rem;
+    }
+
+    /* Specs Section */
+    .specs {
+      padding: 8rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .specs-content h2 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .specs-content > p {
+      color: var(--gray-600);
+      font-size: 1.1rem;
+      margin-bottom: 3rem;
+    }
+
+    .specs-list {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .spec-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .spec-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .spec-item h4 {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .spec-item p {
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    .specs-visual {
+      position: relative;
+      background: var(--gray-100);
+      padding: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .specs-display {
+      background: white;
+      padding: 1.5rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+    }
+
+    .specs-screen {
+      width: 300px;
+      height: 200px;
+      background: linear-gradient(135deg, var(--gray-100) 0%, var(--paper) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      color: var(--gray-400);
+    }
+
+    /* CTA Section */
+    .cta {
+      padding: 8rem;
+      background: var(--paper-warm);
+      text-align: center;
+    }
+
+    .cta h2 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta p {
+      color: var(--gray-600);
+      font-size: 1.1rem;
+      max-width: 500px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 450px;
+      margin: 0 auto;
+    }
+
+    .waitlist-form input {
+      flex: 1;
+      padding: 1rem 1.25rem;
+      font-size: 1rem;
+      font-family: var(--sans);
+      border: 1px solid var(--gray-200);
+      background: white;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .waitlist-form input:focus {
+      border-color: var(--ink);
+    }
+
+    .waitlist-form button {
+      background: var(--ink);
+      color: white;
+      padding: 1rem 2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      font-family: var(--sans);
+      letter-spacing: 0.02em;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .waitlist-form button:hover {
+      background: var(--accent);
+    }
+
+    .waitlist-note {
+      font-size: 0.8rem;
+      color: var(--gray-400);
+      margin-top: 1rem;
+    }
+
+    /* Footer */
+    footer {
+      padding: 4rem 8rem;
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-logo {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--gray-400);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+      color: var(--paper);
+    }
+
+    .footer-copy {
+      color: var(--gray-600);
+      font-size: 0.8rem;
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes floatIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Scroll Animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      nav { padding: 1.5rem 2rem; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-content { padding: 8rem 2rem 4rem; text-align: center; }
+      .hero-description { margin: 0 auto 2.5rem; }
+      .hero-actions { justify-content: center; }
+      .hero-visual { padding: 2rem; min-height: 50vh; }
+      .features { padding: 4rem 2rem; }
+      .features-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .how-it-works { padding: 4rem 2rem; }
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .step::after { display: none; }
+      .specs { padding: 4rem 2rem; grid-template-columns: 1fr; }
+      .cta { padding: 4rem 2rem; }
+      footer { padding: 2rem; }
+      .footer-content { flex-direction: column; gap: 2rem; text-align: center; }
+    }
+
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .steps { grid-template-columns: 1fr; }
+      .waitlist-form { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="navbar">
+    <a href="#" class="logo">InkFrame</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#specs">Specs</a></li>
+    </ul>
+    <a href="#waitlist" class="nav-cta">Join Waitlist</a>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <span class="hero-eyebrow">Introducing InkFrame</span>
+      <h1>Where <em>Art</em> Meets<br>Utility</h1>
+      <p class="hero-description">
+        Transform any space with an elegant E-ink display. Beautiful art when idle, 
+        your personal assistant on demand.
+      </p>
+      <div class="hero-actions">
+        <a href="#waitlist" class="btn-primary">
+          Join the Waitlist
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+        <a href="#how-it-works" class="btn-secondary">
+          See How It Works
+        </a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="device-mockup">
+        <div class="device-frame">
+          <div class="device-screen">
+            <div class="screen-content">
+              <div class="screen-time" id="heroTime">10:42</div>
+              <div class="screen-date" id="heroDate">Sunday, February 1</div>
+              <div class="screen-divider"></div>
+              <div class="screen-weather">
+                <span>☀️</span>
+                <span>22°C</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="floating-label label-calendar">📅 3 events today</div>
+        <div class="floating-label label-tasks">✓ 4 tasks pending</div>
+        <div class="floating-label label-art">🖼️ Art mode</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Features</span>
+      <h2>Designed for Modern Living</h2>
+      <p>A display that adapts to your life, not the other way around.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">🖼️</div>
+        <h3>Art Mode</h3>
+        <p>Display your favorite artwork, family photos, or rotating gallery. E-ink technology means zero eye strain and paper-like quality.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📅</div>
+        <h3>Calendar Sync</h3>
+        <p>Connect Google Calendar to see your schedule at a glance. Never miss a meeting or important event again.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">✓</div>
+        <h3>Task Management</h3>
+        <p>Sync with Todoist to keep your priorities visible. Check off tasks and stay on top of your to-do list.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🌤️</div>
+        <h3>Weather Updates</h3>
+        <p>Real-time weather conditions and forecasts. Know if you need an umbrella before you leave.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔋</div>
+        <h3>Weeks of Battery</h3>
+        <p>E-ink displays use power only when refreshing. Run for weeks on a single charge.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔒</div>
+        <h3>Privacy First</h3>
+        <p>No camera. No microphone. No always-listening. Your data stays yours.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">How It Works</span>
+      <h2>Simple Setup, Elegant Design</h2>
+      <p>Get started in minutes, not hours.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-number">01</div>
+        <h3>Connect</h3>
+        <p>Power on and connect to your WiFi network using the simple setup portal.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-number">02</div>
+        <h3>Link</h3>
+        <p>Link your calendar, tasks, and upload your favorite images through the web app.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-number">03</div>
+        <h3>Place</h3>
+        <p>Find the perfect spot. On a shelf, desk, nightstand, or wall-mounted.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-number">04</div>
+        <h3>Enjoy</h3>
+        <p>Press the button to switch between art mode and dashboard. That's it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Specs Section -->
+  <section class="specs" id="specs">
+    <div class="specs-content reveal">
+      <h2>Built for Performance</h2>
+      <p>Professional-grade components in an elegant package.</p>
+      <div class="specs-list">
+        <div class="spec-item">
+          <div class="spec-icon">📐</div>
+          <div>
+            <h4>7.5" E-Ink Display</h4>
+            <p>800×480 resolution with 3-color support (black, white, red)</p>
+          </div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-icon">⚡</div>
+          <div>
+            <h4>Ultra Low Power</h4>
+            <p>Uses power only during refresh. Weeks of battery life.</p>
+          </div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-icon">📡</div>
+          <div>
+            <h4>WiFi Connected</h4>
+            <p>2.4GHz WiFi for reliable, low-power connectivity</p>
+          </div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-icon">🔄</div>
+          <div>
+            <h4>OTA Updates</h4>
+            <p>Automatic firmware updates keep your device current</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="specs-visual reveal">
+      <div class="specs-display">
+        <div class="specs-screen">
+          <em>E-Ink</em>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta" id="waitlist">
+    <div class="reveal">
+      <h2>Be the First to Know</h2>
+      <p>Join our waitlist for early access, exclusive updates, and founder pricing.</p>
+      <form class="waitlist-form" id="waitlistForm">
+        <input type="email" placeholder="Enter your email" required>
+        <button type="submit">Join Waitlist</button>
+      </form>
+      <p class="waitlist-note">No spam, ever. Unsubscribe anytime.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <span class="footer-logo">InkFrame</span>
+      <ul class="footer-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#specs">Specs</a></li>
+        <li><a href="mailto:hello@inkframe.com">Contact</a></li>
+      </ul>
+      <span class="footer-copy">© 2025 InkFrame. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <script>
+    // Update hero time
+    function updateTime() {
+      const now = new Date();
+      const timeEl = document.getElementById('heroTime');
+      const dateEl = document.getElementById('heroDate');
+      
+      timeEl.textContent = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      
+      dateEl.textContent = now.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
+    
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // Navbar scroll effect
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+
+    // Scroll reveal animation
+    const reveals = document.querySelectorAll('.reveal');
+    
+    const revealOnScroll = () => {
+      reveals.forEach(el => {
+        const windowHeight = window.innerHeight;
+        const elementTop = el.getBoundingClientRect().top;
+        const elementVisible = 150;
+        
+        if (elementTop < windowHeight - elementVisible) {
+          el.classList.add('visible');
+        }
+      });
+    };
+    
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll(); // Run on load
+
+    // Waitlist form
+    document.getElementById('waitlistForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const email = this.querySelector('input').value;
+      
+      // In production, send to your backend
+      alert(`Thanks for joining! We'll notify ${email} when InkFrame launches.`);
+      this.reset();
+    });
+  </script>
+</body>
+</html>

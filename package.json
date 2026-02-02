@@ -1,0 +1,13 @@
+{
+  "name": "inkframe",
+  "version": "1.0.0",
+  "description": "InkFrame E-Ink Display System",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "install": "cd backend && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
