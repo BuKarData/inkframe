@@ -1214,6 +1214,7 @@
         'sidebar.yourImages': 'Your Images',
         'sidebar.uploadText': 'Drag & drop or <strong>browse</strong>',
         'sidebar.noImages': 'No images yet',
+        'sidebar.uploadHint': 'Upload an image to get started',
         'editor.crop': 'Crop',
         'editor.adjust': 'Adjust',
         'editor.reset': 'Reset',
@@ -1281,6 +1282,7 @@
         'sidebar.yourImages': 'Twoje zdjecia',
         'sidebar.uploadText': 'Przeciagnij lub <strong>wybierz</strong>',
         'sidebar.noImages': 'Brak zdjec',
+        'sidebar.uploadHint': 'Przeslij zdjecie aby rozpoczac',
         'editor.crop': 'Przytnij',
         'editor.adjust': 'Dostosuj',
         'editor.reset': 'Resetuj',
@@ -1348,6 +1350,7 @@
         'sidebar.yourImages': 'Deine Bilder',
         'sidebar.uploadText': 'Ziehen oder <strong>durchsuchen</strong>',
         'sidebar.noImages': 'Noch keine Bilder',
+        'sidebar.uploadHint': 'Lade ein Bild hoch um zu beginnen',
         'editor.crop': 'Zuschneiden',
         'editor.adjust': 'Anpassen',
         'editor.reset': 'Zurucksetzen',
@@ -1415,6 +1418,7 @@
         'sidebar.yourImages': 'Tus imagenes',
         'sidebar.uploadText': 'Arrastra o <strong>busca</strong>',
         'sidebar.noImages': 'Sin imagenes aun',
+        'sidebar.uploadHint': 'Sube una imagen para comenzar',
         'editor.crop': 'Recortar',
         'editor.adjust': 'Ajustar',
         'editor.reset': 'Restablecer',
@@ -1628,13 +1632,12 @@
     function renderGallery(images) {
       const gallery = document.getElementById('gallery');
       if (images.length === 0) {
-        gallery.innerHTML = `<div class="gallery-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><p>${t('sidebar.noImages')}</p></div>`;
+        gallery.innerHTML = `<div class="gallery-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><p>${t('sidebar.noImages')}</p><p style="font-size: 0.75rem; margin-top: 0.5rem;">${t('sidebar.uploadHint')}</p></div>`;
         return;
       }
-      const baseUrl = API_BASE.replace('/api', '');
       gallery.innerHTML = `<div class="gallery-grid">${images.map(img => `
-        <div class="gallery-item ${selectedImage?.id === img.id ? 'selected' : ''}" data-id="${img.id}" onclick="selectImage('${img.id}', '${baseUrl}${img.url}')">
-          <img src="${baseUrl}${img.url}" alt="${img.title}">
+        <div class="gallery-item ${selectedImage?.id === img.id ? 'selected' : ''}" data-id="${img.id}" onclick="selectImage('${img.id}', '${STATIC_BASE}${img.url}')">
+          <img src="${STATIC_BASE}${img.url}" alt="${img.title}" onerror="this.style.display='none'">
           <button class="delete-btn" onclick="event.stopPropagation(); showDeleteModal('${img.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -1690,7 +1693,7 @@
         if (!res.ok) throw new Error(data.error || 'Upload failed');
         showToast(t('toast.uploaded'), 'success');
         loadImages();
-        setTimeout(() => selectImage(data.image.id, API_BASE.replace('/api', '') + data.image.url), 100);
+        setTimeout(() => selectImage(data.image.id, STATIC_BASE + data.image.url), 100);
       } catch (error) {
         showToast(error.message, 'error');
       }

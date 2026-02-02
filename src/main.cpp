@@ -74,6 +74,7 @@ GxEPD2_154_GDEY0154D67(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
 SPIClass hspi(HSPI);
 WiFiManager wifiManager;
 Preferences preferences;
+WiFiClientSecure secureClient;
 bool wifiConnected = false;
 
 // Display modes
@@ -106,6 +107,7 @@ void registerDevice();
 void fetchDeviceSettings();
 void toggleMode();
 void advanceImage();
+void setupSecureClient();
 
 // ============================================================
 // SETUP
@@ -252,8 +254,6 @@ void advanceImage() {
 // ============================================================
 // HTTPS CLIENT HELPER
 // ============================================================
-WiFiClientSecure secureClient;
-
 void setupSecureClient() {
   // Skip certificate verification (required for ESP32 to connect to HTTPS)
   secureClient.setInsecure();
