@@ -2,12 +2,14 @@
   "name": "inkframe",
   "version": "1.0.0",
   "description": "InkFrame E-Ink Display System",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "cd backend && npm start",
-    "dev": "cd backend && npm run dev",
-    "install": "cd backend && npm install"
+    "start": "node backend/server.js",
+    "postinstall": "cd backend && npm install"
   },
   "engines": {
-    "node": ">=18.0.0"
-  }
+    "node": "18.x"
+  },
+  "keywords": ["eink", "esp32", "smart-display"],
+  "license": "MIT"
 }
