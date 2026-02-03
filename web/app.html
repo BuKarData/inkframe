@@ -1816,9 +1816,18 @@
       });
 
       if (res.ok) {
+        const data = await res.json();
         showToast(t('app.uploaded'), 'success');
-        loadImages();
-        switchTab('gallery');
+        await loadImages();
+
+        // Auto-select the newly uploaded image and open editor
+        if (data.image && data.image.id) {
+          const newImg = images.find(i => i.id === data.image.id);
+          if (newImg) {
+            selectImage(newImg.id);
+          }
+        }
+
         // Mark that there are changes to sync to display
         markPendingChange('images');
       } else {
@@ -1957,39 +1966,43 @@
     async function updatePreview() {
       if (!editingImage) return;
 
-      // Debounce
+      // Very short debounce for responsive feel
       if (previewDebounce) clearTimeout(previewDebounce);
-      previewDebounce = setTimeout(async () => {
-        const frame = document.getElementById('previewFrame');
-        frame.innerHTML = '<div class="spinner"></div>';
+      previewDebounce = setTimeout(doPreviewUpdate, 100);
+    }
 
-        // Get all current settings from UI
-        editorSettings.dithering = document.getElementById('ditheringSelect').value;
-        editorSettings.textOverlay = document.getElementById('textOverlayInput').value;
-        editorSettings.textPosition = document.getElementById('textPositionSelect').value;
-        editorSettings.textSize = document.getElementById('textSizeSelect').value;
+    async function doPreviewUpdate() {
+      if (!editingImage) return;
 
-        try {
-          const res = await api('/images/preview', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageId: editingImage.id,
-              ...editorSettings
-            })
-          });
+      const frame = document.getElementById('previewFrame');
+      frame.innerHTML = '<div class="spinner"></div>';
 
-          if (res && res.ok) {
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            frame.innerHTML = `<img src="${url}" alt="Preview">`;
-          } else {
-            frame.innerHTML = `<span>${t('app.error')}</span>`;
-          }
-        } catch (err) {
+      // Get all current settings from UI
+      editorSettings.dithering = document.getElementById('ditheringSelect').value;
+      editorSettings.textOverlay = document.getElementById('textOverlayInput').value;
+      editorSettings.textPosition = document.getElementById('textPositionSelect').value;
+      editorSettings.textSize = document.getElementById('textSizeSelect').value;
+
+      try {
+        const res = await api('/images/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageId: editingImage.id,
+            ...editorSettings
+          })
+        });
+
+        if (res && res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          frame.innerHTML = `<img src="${url}" alt="Preview">`;
+        } else {
           frame.innerHTML = `<span>${t('app.error')}</span>`;
         }
-      }, 300);
+      } catch (err) {
+        frame.innerHTML = `<span>${t('app.error')}</span>`;
+      }
     }
 
     async function saveEditedImage() {

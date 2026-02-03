@@ -519,26 +519,31 @@ app.post('/api/images/preview', authenticate, async (req, res, next) => {
       }
     }
 
-    const result = await imageProcessor.processImage(imageBuffer, {
+    // Parse numeric values explicitly to handle potential string inputs
+    const processOptions = {
       width: 200,
       height: 200,
-      brightness: brightness || 0,
-      contrast: contrast || 0,
-      sharpness: sharpness || 0,
-      gamma: gamma || 1.0,
+      brightness: parseInt(brightness) || 0,
+      contrast: parseInt(contrast) || 0,
+      sharpness: parseInt(sharpness) || 0,
+      gamma: parseFloat(gamma) || 1.0,
       dithering: dithering || 'floydSteinberg',
-      rotation: rotation || 0,
-      flipH: flipH || false,
-      flipV: flipV || false,
-      invert: invert || false,
-      cropX: cropX || 0,
-      cropY: cropY || 0,
-      cropW: cropW || 1,
-      cropH: cropH || 1,
+      rotation: parseInt(rotation) || 0,
+      flipH: !!flipH,
+      flipV: !!flipV,
+      invert: !!invert,
+      cropX: parseFloat(cropX) || 0,
+      cropY: parseFloat(cropY) || 0,
+      cropW: parseFloat(cropW) || 1,
+      cropH: parseFloat(cropH) || 1,
       textOverlay: textOverlay || '',
       textPosition: textPosition || 'bottom',
       textSize: textSize || 'medium'
-    });
+    };
+
+    console.log('Preview options:', { imageId, rotation: processOptions.rotation, flipH: processOptions.flipH, flipV: processOptions.flipV });
+
+    const result = await imageProcessor.processImage(imageBuffer, processOptions);
 
     res.set('Content-Type', 'image/png');
     res.send(result.png);
@@ -576,26 +581,31 @@ app.post('/api/images/process', authenticate, async (req, res, next) => {
       }
     }
 
-    const result = await imageProcessor.processImage(imageBuffer, {
+    // Parse numeric values explicitly
+    const processOptions = {
       width: 200,
       height: 200,
-      brightness: brightness || 0,
-      contrast: contrast || 0,
-      sharpness: sharpness || 0,
-      gamma: gamma || 1.0,
+      brightness: parseInt(brightness) || 0,
+      contrast: parseInt(contrast) || 0,
+      sharpness: parseInt(sharpness) || 0,
+      gamma: parseFloat(gamma) || 1.0,
       dithering: dithering || 'floydSteinberg',
-      rotation: rotation || 0,
-      flipH: flipH || false,
-      flipV: flipV || false,
-      invert: invert || false,
-      cropX: cropX || 0,
-      cropY: cropY || 0,
-      cropW: cropW || 1,
-      cropH: cropH || 1,
+      rotation: parseInt(rotation) || 0,
+      flipH: !!flipH,
+      flipV: !!flipV,
+      invert: !!invert,
+      cropX: parseFloat(cropX) || 0,
+      cropY: parseFloat(cropY) || 0,
+      cropW: parseFloat(cropW) || 1,
+      cropH: parseFloat(cropH) || 1,
       textOverlay: textOverlay || '',
       textPosition: textPosition || 'bottom',
       textSize: textSize || 'medium'
-    });
+    };
+
+    console.log('Process options:', { imageId, rotation: processOptions.rotation });
+
+    const result = await imageProcessor.processImage(imageBuffer, processOptions);
 
     // Save processed image to database
     await db.updateImageData(imageId, imageData?.imageData || imageBuffer, result.png);
@@ -837,6 +847,36 @@ app.delete('/api/todos/:id', authenticate, async (req, res, next) => {
     res.json({ message: 'Todo deleted' });
   } catch (error) {
     next(error);
+  }
+});
+
+// ==================== GOOGLE OAUTH (for Calendar) ====================
+
+// Google OAuth callback - exchanges code for tokens and saves to database
+app.get('/api/auth/google/callback', async (req, res, next) => {
+  try {
+    const { code, state: userId } = req.query;
+
+    if (!code) {
+      return res.status(400).send('Missing authorization code');
+    }
+
+    if (!userId) {
+      return res.status(400).send('Missing user state');
+    }
+
+    // Use calendar module to handle the token exchange
+    const success = await calendarModule.handleCallback(code, userId);
+
+    if (success) {
+      // Redirect back to app with success message
+      res.redirect('/app?calendar=connected');
+    } else {
+      res.redirect('/app?calendar=error');
+    }
+  } catch (error) {
+    console.error('Google OAuth callback error:', error);
+    res.redirect('/app?calendar=error');
   }
 });
 
