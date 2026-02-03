@@ -20,6 +20,10 @@ const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const db = require('./database');
+const weatherModule = require('./modules/weather');
+const todoModule = require('./modules/todo');
+const calendarModule = require('./modules/calendar');
+const dashboardRenderer = require('./modules/dashboard-renderer');
 
 // ==================== CONFIGURATION ====================
 
@@ -405,11 +409,11 @@ app.delete('/api/images/:id', authenticate, async (req, res, next) => {
   }
 });
 
-// ESP32 bitmap endpoint
+// ESP32 bitmap endpoint - supports both photo carousel and dashboard mode
 app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => {
   try {
     const { deviceId } = req.params;
-    const { index = 0 } = req.query;
+    const { index = 0, mode = 'photo' } = req.query;
 
     const device = await db.getDeviceById(deviceId);
     if (!device) return res.status(404).json({ error: 'Device not found' });
@@ -418,8 +422,67 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
 
     if (!device.userId) return res.status(404).json({ error: 'Device not linked to account' });
 
+    // Dashboard mode - render weather, calendar, todos
+    if (mode === 'dashboard') {
+      const settings = await db.getUserSettings(device.userId) || { city: 'Warsaw' };
+
+      const [weather, events, todos] = await Promise.all([
+        settings.city ? weatherModule.getWeatherByCity(settings.city) : null,
+        calendarModule.getUpcomingEvents(device.userId, 3),
+        todoModule.getActiveTodos(device.userId, 4)
+      ]);
+
+      const bitmap = await dashboardRenderer.renderDashboardBitmap({
+        weather,
+        events: events || [],
+        todos: todos || [],
+        date: new Date()
+      });
+
+      if (!bitmap) {
+        return res.status(500).json({ error: 'Failed to render dashboard' });
+      }
+
+      res.set({
+        'Content-Type': 'application/octet-stream',
+        'X-Image-Width': 200,
+        'X-Image-Height': 200,
+        'X-Image-Index': 0,
+        'X-Image-Total': 1,
+        'X-Content-Type': 'dashboard',
+        'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total, X-Content-Type'
+      });
+
+      return res.send(bitmap);
+    }
+
+    // Photo carousel mode
     const userImages = await db.getImagesByUserId(device.userId);
-    if (userImages.length === 0) return res.status(404).json({ error: 'No images available' });
+    if (userImages.length === 0) {
+      // No images - return dashboard instead
+      const settings = await db.getUserSettings(device.userId) || { city: 'Warsaw' };
+      const weather = settings.city ? await weatherModule.getWeatherByCity(settings.city) : null;
+      const todos = await todoModule.getActiveTodos(device.userId, 4);
+
+      const bitmap = await dashboardRenderer.renderDashboardBitmap({
+        weather,
+        events: [],
+        todos: todos || [],
+        date: new Date()
+      });
+
+      res.set({
+        'Content-Type': 'application/octet-stream',
+        'X-Image-Width': 200,
+        'X-Image-Height': 200,
+        'X-Image-Index': 0,
+        'X-Image-Total': 0,
+        'X-Content-Type': 'dashboard',
+        'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total, X-Content-Type'
+      });
+
+      return res.send(bitmap);
+    }
 
     const imageIndex = parseInt(index) % userImages.length;
     const image = userImages[imageIndex];
@@ -454,7 +517,8 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
       'X-Image-Height': displayConfig.height,
       'X-Image-Index': imageIndex,
       'X-Image-Total': userImages.length,
-      'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total'
+      'X-Content-Type': 'photo',
+      'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total, X-Content-Type'
     });
 
     res.send(bitmap);
@@ -495,6 +559,199 @@ app.post('/api/device/:deviceId/next-image', optionalAuth, async (req, res, next
   }
 });
 
+// ==================== WEATHER MODULE ====================
+
+app.get('/api/weather', authenticate, async (req, res, next) => {
+  try {
+    const { lat, lon, city } = req.query;
+
+    let weather;
+    if (city) {
+      weather = await weatherModule.getWeatherByCity(city);
+    } else if (lat && lon) {
+      weather = await weatherModule.getWeather(parseFloat(lat), parseFloat(lon));
+    } else {
+      return res.status(400).json({ error: 'Provide city or lat/lon coordinates' });
+    }
+
+    if (!weather) {
+      return res.status(503).json({ error: 'Weather service unavailable. Check OPENWEATHER_API_KEY.' });
+    }
+
+    res.json({ weather });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==================== TODO MODULE ====================
+
+app.get('/api/todos', authenticate, async (req, res, next) => {
+  try {
+    const todos = await todoModule.getTodos(req.user.id);
+    res.json({ todos });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/todos', authenticate, async (req, res, next) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Todo text is required' });
+    }
+    const todo = await todoModule.addTodo(req.user.id, text.trim());
+    res.status(201).json({ todo });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put('/api/todos/:id', authenticate, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { text, completed } = req.body;
+    await todoModule.updateTodo(req.user.id, id, { text, completed });
+    res.json({ message: 'Todo updated' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/api/todos/:id', authenticate, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await todoModule.deleteTodo(req.user.id, id);
+    res.json({ message: 'Todo deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==================== CALENDAR MODULE ====================
+
+app.get('/api/calendar/auth-url', authenticate, (req, res) => {
+  const authUrl = calendarModule.getAuthUrl(req.user.id);
+  if (!authUrl) {
+    return res.status(503).json({ error: 'Google Calendar not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.' });
+  }
+  res.json({ authUrl });
+});
+
+app.get('/api/calendar/callback', async (req, res, next) => {
+  try {
+    const { code, state: userId } = req.query;
+    if (!code || !userId) {
+      return res.status(400).send('Invalid callback parameters');
+    }
+    const success = await calendarModule.handleCallback(code, userId);
+    if (success) {
+      res.redirect('/app?calendar=connected');
+    } else {
+      res.redirect('/app?calendar=error');
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/calendar/status', authenticate, async (req, res, next) => {
+  try {
+    const connected = await calendarModule.isConnected(req.user.id);
+    res.json({ connected });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/calendar/events', authenticate, async (req, res, next) => {
+  try {
+    const events = await calendarModule.getUpcomingEvents(req.user.id);
+    if (events === null) {
+      return res.status(401).json({ error: 'Calendar not connected' });
+    }
+    res.json({ events });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/api/calendar/disconnect', authenticate, async (req, res, next) => {
+  try {
+    await calendarModule.disconnect(req.user.id);
+    res.json({ message: 'Calendar disconnected' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==================== USER SETTINGS ====================
+
+app.get('/api/settings', authenticate, async (req, res, next) => {
+  try {
+    const settings = await db.getUserSettings(req.user.id);
+    res.json({ settings: settings || { city: 'Warsaw', displayMode: 'dashboard' } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put('/api/settings', authenticate, async (req, res, next) => {
+  try {
+    const { city, displayMode, lat, lon } = req.body;
+    await db.updateUserSettings(req.user.id, { city, displayMode, lat, lon });
+    res.json({ message: 'Settings updated' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==================== DASHBOARD BITMAP ====================
+
+app.get('/api/device/:deviceId/dashboard', optionalAuth, async (req, res, next) => {
+  try {
+    const { deviceId } = req.params;
+    const device = await db.getDeviceById(deviceId);
+    if (!device) return res.status(404).json({ error: 'Device not found' });
+    if (!device.userId) return res.status(404).json({ error: 'Device not linked' });
+
+    // Get user settings
+    const settings = await db.getUserSettings(device.userId) || { city: 'Warsaw' };
+
+    // Gather dashboard data
+    const [weather, events, todos] = await Promise.all([
+      settings.city ? weatherModule.getWeatherByCity(settings.city) : null,
+      calendarModule.getUpcomingEvents(device.userId, 3),
+      todoModule.getActiveTodos(device.userId, 4)
+    ]);
+
+    // Render dashboard bitmap
+    const bitmap = await dashboardRenderer.renderDashboardBitmap({
+      weather,
+      events: events || [],
+      todos: todos || [],
+      date: new Date()
+    });
+
+    if (!bitmap) {
+      return res.status(500).json({ error: 'Failed to render dashboard' });
+    }
+
+    res.set({
+      'Content-Type': 'application/octet-stream',
+      'X-Image-Width': 200,
+      'X-Image-Height': 200,
+      'X-Content-Type': 'dashboard',
+      'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Content-Type'
+    });
+
+    res.send(bitmap);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ==================== HEALTH CHECK ====================
 
 app.get('/api/health', (req, res) => {
@@ -504,12 +761,41 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: isProduction ? 'production' : 'development',
     storage: db.isUsingPostgres() ? 'PostgreSQL' : 'JSON files',
+    databaseConnected: db.isUsingPostgres(),
     paths: {
       data: DATA_DIR,
       uploads: UPLOAD_DIR,
       web: WEB_DIR
     }
   });
+});
+
+// Debug endpoint - check database status
+app.get('/api/debug/db', async (req, res) => {
+  try {
+    const status = {
+      usingPostgres: db.isUsingPostgres(),
+      envVars: {
+        DATABASE_URL: !!process.env.DATABASE_URL,
+        DATABASE_PUBLIC_URL: !!process.env.DATABASE_PUBLIC_URL,
+        POSTGRES_URL: !!process.env.POSTGRES_URL
+      }
+    };
+
+    if (db.isUsingPostgres()) {
+      const devices = await db.getDevices();
+      const users = await db.getUsers();
+      status.data = {
+        usersCount: Object.keys(users).length,
+        devicesCount: Object.keys(devices).length,
+        devices: Object.keys(devices)
+      };
+    }
+
+    res.json(status);
+  } catch (error) {
+    res.json({ error: error.message, stack: error.stack });
+  }
 });
 
 // ==================== ERROR HANDLING ====================
@@ -534,6 +820,13 @@ async function init() {
   // Initialize database (PostgreSQL if DATABASE_URL set, otherwise JSON)
   await db.initDatabase();
   console.log(`Storage: ${db.isUsingPostgres() ? 'PostgreSQL' : 'JSON files'}`);
+
+  // Initialize modules with database connection
+  const pool = db.getPool();
+  const isPostgres = db.isUsingPostgres();
+  await todoModule.initTodoModule(pool, isPostgres);
+  await calendarModule.initCalendarModule(pool, isPostgres);
+  console.log('Modules initialized');
 
   // Create necessary directories
   await fs.mkdir(DATA_DIR, { recursive: true });

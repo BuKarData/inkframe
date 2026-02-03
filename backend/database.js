@@ -25,28 +25,43 @@ let usePostgres = false;
  * Initialize database connection
  */
 async function initDatabase() {
-  if (process.env.DATABASE_URL) {
+  const dbUrl = process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL || process.env.POSTGRES_URL;
+
+  console.log('=== Database Initialization ===');
+  console.log(`DATABASE_URL exists: ${!!process.env.DATABASE_URL}`);
+  console.log(`DATABASE_PUBLIC_URL exists: ${!!process.env.DATABASE_PUBLIC_URL}`);
+  console.log(`POSTGRES_URL exists: ${!!process.env.POSTGRES_URL}`);
+
+  if (dbUrl) {
     try {
+      console.log(`Connecting to PostgreSQL...`);
+
       pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        connectionString: dbUrl,
+        ssl: {
+          rejectUnauthorized: false
+        }
       });
 
       // Test connection
-      await pool.query('SELECT NOW()');
-      console.log('Connected to PostgreSQL database');
+      const result = await pool.query('SELECT NOW() as time');
+      console.log(`PostgreSQL connected successfully at ${result.rows[0].time}`);
 
       // Create tables if they don't exist
       await createTables();
       usePostgres = true;
+      console.log('=== Using PostgreSQL for data persistence ===');
       return true;
     } catch (error) {
-      console.error('PostgreSQL connection failed, falling back to JSON:', error.message);
+      console.error('PostgreSQL connection failed:', error.message);
+      console.error('Full error:', error);
       pool = null;
       usePostgres = false;
+      console.log('=== Falling back to JSON file storage ===');
     }
   } else {
-    console.log('No DATABASE_URL found, using JSON file storage');
+    console.log('No database URL found in environment variables');
+    console.log('=== Using JSON file storage (data will NOT persist on Railway!) ===');
   }
   return false;
 }
@@ -56,6 +71,7 @@ async function initDatabase() {
  */
 async function createTables() {
   const queries = [
+    // Users table
     `CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -63,30 +79,47 @@ async function createTables() {
       name TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
+    // Devices table - no foreign key to allow device registration before user linking
     `CREATE TABLE IF NOT EXISTS devices (
       id TEXT PRIMARY KEY,
-      user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+      user_id TEXT,
       name TEXT DEFAULT 'My InkFrame',
       current_image TEXT,
       brightness INTEGER DEFAULT 100,
       registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
+    // Images table
     `CREATE TABLE IF NOT EXISTS images (
       id TEXT PRIMARY KEY,
-      user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+      user_id TEXT,
       filename TEXT NOT NULL,
       original_name TEXT,
       uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
+    // Indexes for faster queries
     `CREATE INDEX IF NOT EXISTS idx_devices_user ON devices(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_images_user ON images(user_id)`
   ];
 
   for (const query of queries) {
-    await pool.query(query);
+    try {
+      await pool.query(query);
+    } catch (err) {
+      console.error(`Table creation error: ${err.message}`);
+    }
   }
   console.log('Database tables created/verified');
+
+  // Log existing data count
+  try {
+    const usersCount = await pool.query('SELECT COUNT(*) FROM users');
+    const devicesCount = await pool.query('SELECT COUNT(*) FROM devices');
+    const imagesCount = await pool.query('SELECT COUNT(*) FROM images');
+    console.log(`Existing data: ${usersCount.rows[0].count} users, ${devicesCount.rows[0].count} devices, ${imagesCount.rows[0].count} images`);
+  } catch (err) {
+    console.error('Error counting data:', err.message);
+  }
 }
 
 // ============ USER OPERATIONS ============
@@ -414,10 +447,86 @@ async function deleteImage(id) {
   }
 }
 
+// ============ USER SETTINGS ============
+
+async function getUserSettings(userId) {
+  if (usePostgres) {
+    try {
+      // Create settings table if not exists
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_settings (
+          user_id TEXT PRIMARY KEY,
+          city TEXT DEFAULT 'Warsaw',
+          display_mode TEXT DEFAULT 'dashboard',
+          lat REAL,
+          lon REAL,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      const result = await pool.query('SELECT * FROM user_settings WHERE user_id = $1', [userId]);
+      if (result.rows.length === 0) return null;
+      const row = result.rows[0];
+      return {
+        city: row.city,
+        displayMode: row.display_mode,
+        lat: row.lat,
+        lon: row.lon
+      };
+    } catch (err) {
+      console.error('Get settings error:', err.message);
+      return null;
+    }
+  } else {
+    const filePath = path.join(DATA_DIR, 'settings.json');
+    try {
+      const data = await fs.readFile(filePath, 'utf8');
+      const settings = JSON.parse(data);
+      return settings[userId] || null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function updateUserSettings(userId, settings) {
+  if (usePostgres) {
+    try {
+      await pool.query(`
+        INSERT INTO user_settings (user_id, city, display_mode, lat, lon)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (user_id) DO UPDATE SET
+          city = COALESCE($2, user_settings.city),
+          display_mode = COALESCE($3, user_settings.display_mode),
+          lat = COALESCE($4, user_settings.lat),
+          lon = COALESCE($5, user_settings.lon),
+          updated_at = CURRENT_TIMESTAMP
+      `, [userId, settings.city, settings.displayMode, settings.lat, settings.lon]);
+    } catch (err) {
+      console.error('Update settings error:', err.message);
+    }
+  } else {
+    const filePath = path.join(DATA_DIR, 'settings.json');
+    let data = {};
+    try {
+      const content = await fs.readFile(filePath, 'utf8');
+      data = JSON.parse(content);
+    } catch {}
+
+    data[userId] = { ...data[userId], ...settings };
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+  }
+}
+
 // ============ UTILITY ============
 
 function isUsingPostgres() {
   return usePostgres;
+}
+
+function getPool() {
+  return pool;
 }
 
 async function closeDatabase() {
@@ -430,6 +539,7 @@ module.exports = {
   initDatabase,
   isUsingPostgres,
   closeDatabase,
+  getPool,
   // Users
   getUsers,
   saveUsers,
@@ -450,5 +560,8 @@ module.exports = {
   getImagesByUserId,
   createImage,
   getImageById,
-  deleteImage
+  deleteImage,
+  // User Settings
+  getUserSettings,
+  updateUserSettings
 };

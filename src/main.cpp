@@ -98,6 +98,8 @@ bool hasImage = false;
 void initDisplay();
 void drawTestScreen();
 void drawDashboard();
+bool fetchBitmap(int index, const char* mode);
+bool fetchDashboard();
 void drawSetupScreen();
 void setupWiFi();
 void resetWiFiSettings();
@@ -177,13 +179,17 @@ void loop() {
 
   // Mode-specific updates
   if (currentMode == MODE_DASHBOARD) {
-    // Update dashboard every 5 minutes
+    // Update dashboard every 5 minutes (fetch server-rendered dashboard with weather/calendar/todos)
     if (millis() - lastUpdate > 300000) {
-      drawDashboard();
+      if (fetchDashboard()) {
+        drawImage();
+      } else {
+        drawDashboard();  // Local fallback
+      }
       lastUpdate = millis();
     }
   } else if (currentMode == MODE_IMAGE) {
-    // Check for image rotation
+    // Check for image rotation (carousel mode)
     if (totalImages > 1 && millis() - lastImageRotation > imageRotateInterval) {
       advanceImage();
       lastImageRotation = millis();
@@ -196,7 +202,11 @@ void loop() {
       } else if (!hasImage) {
         // No images available, switch to dashboard
         currentMode = MODE_DASHBOARD;
-        drawDashboard();
+        if (fetchDashboard()) {
+          drawImage();
+        } else {
+          drawDashboard();
+        }
       }
       lastUpdate = millis();
     }
@@ -206,23 +216,35 @@ void loop() {
 }
 
 // ============================================================
-// TOGGLE MODE
+// TOGGLE MODE (BOOT button cycles: Dashboard -> Photos -> Dashboard)
 // ============================================================
 void toggleMode() {
   if (currentMode == MODE_DASHBOARD) {
+    // Try to switch to photo mode
     currentMode = MODE_IMAGE;
-    Serial.println("Switching to IMAGE mode");
+    Serial.println("Switching to PHOTO mode");
     if (fetchImage(currentImageIndex)) {
       drawImage();
     } else {
-      Serial.println("No images available, staying on dashboard");
+      Serial.println("No photos available, staying on dashboard");
       currentMode = MODE_DASHBOARD;
-      drawDashboard();
+      // Fetch server-rendered dashboard
+      if (fetchDashboard()) {
+        drawImage();
+      } else {
+        drawDashboard();  // Local fallback
+      }
     }
   } else {
+    // Switch back to dashboard mode
     currentMode = MODE_DASHBOARD;
     Serial.println("Switching to DASHBOARD mode");
-    drawDashboard();
+    // Fetch server-rendered dashboard (with weather, calendar, todos)
+    if (fetchDashboard()) {
+      drawImage();
+    } else {
+      drawDashboard();  // Local fallback
+    }
   }
 }
 
@@ -359,21 +381,29 @@ void fetchDeviceSettings() {
 }
 
 // ============================================================
-// FETCH IMAGE
+// FETCH IMAGE (supports both photo and dashboard mode)
 // ============================================================
 bool fetchImage(int index) {
-  Serial.printf("Fetching image %d...\n", index);
+  return fetchBitmap(index, "photo");
+}
+
+bool fetchDashboard() {
+  return fetchBitmap(0, "dashboard");
+}
+
+bool fetchBitmap(int index, const char* mode) {
+  Serial.printf("Fetching %s (index %d)...\n", mode, index);
 
   HTTPClient http;
   String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
-  String url = String(API_SERVER) + "/api/device/" + deviceId + "/bitmap?index=" + String(index);
+  String url = String(API_SERVER) + "/api/device/" + deviceId + "/bitmap?index=" + String(index) + "&mode=" + String(mode);
 
   http.begin(secureClient, url);
-  http.setTimeout(15000);  // 15 second timeout for image download
+  http.setTimeout(15000);  // 15 second timeout
 
-  // Collect headers we're interested in
-  const char* headerKeys[] = {"X-Image-Total", "X-Image-Index", "X-Image-Width", "X-Image-Height"};
-  http.collectHeaders(headerKeys, 4);
+  // Collect headers including new X-Content-Type
+  const char* headerKeys[] = {"X-Image-Total", "X-Image-Index", "X-Image-Width", "X-Image-Height", "X-Content-Type"};
+  http.collectHeaders(headerKeys, 5);
 
   int httpCode = http.GET();
 
@@ -381,10 +411,15 @@ bool fetchImage(int index) {
     int len = http.getSize();
     int expectedSize = DISPLAY_WIDTH * DISPLAY_HEIGHT / 8;
 
-    // Get total images from header
+    // Get metadata from headers
     if (http.hasHeader("X-Image-Total")) {
       totalImages = http.header("X-Image-Total").toInt();
       Serial.printf("Total images: %d\n", totalImages);
+    }
+
+    if (http.hasHeader("X-Content-Type")) {
+      String contentType = http.header("X-Content-Type");
+      Serial.printf("Content type: %s\n", contentType.c_str());
     }
 
     if (len == expectedSize || len == -1) {  // -1 means chunked/unknown
@@ -402,7 +437,7 @@ bool fetchImage(int index) {
       }
 
       if (bytesRead == expectedSize) {
-        Serial.printf("Image received: %d bytes\n", bytesRead);
+        Serial.printf("Bitmap received: %d bytes\n", bytesRead);
         hasImage = true;
         http.end();
         return true;
@@ -413,7 +448,7 @@ bool fetchImage(int index) {
       Serial.printf("Wrong size: got %d, expected %d\n", len, expectedSize);
     }
   } else if (httpCode == 404) {
-    Serial.println("No images available on server");
+    Serial.println("No content available on server");
     totalImages = 0;
   } else {
     Serial.printf("HTTP error: %d\n", httpCode);

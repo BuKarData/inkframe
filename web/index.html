@@ -3,72 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>InkFrame - Smart E-Ink Display for Your Photos</title>
-  <meta name="description" content="Transform your photos into beautiful E-ink art. Upload, edit, and display your images on InkFrame's stunning E-ink display.">
-
+  <title>InkFrame - E-Ink Smart Display</title>
+  <meta name="description" content="Transform your space with InkFrame - the elegant E-ink smart display for weather, calendar, photos and more.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #0a0a0a;
-      --bg-light: #141414;
-      --surface: #1a1a1a;
-      --border: #2a2a2a;
-      --text: #ffffff;
-      --text-secondary: #a0a0a0;
-      --text-muted: #666666;
-      --accent: #6366f1;
-      --accent-light: #818cf8;
-      --gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      --bg: #fafafa;
+      --bg-secondary: #f5f5f5;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #4a4a4a;
+      --text-muted: #8a8a8a;
+      --border: #e0e0e0;
+      --accent: #1a1a1a;
+      --accent-hover: #333333;
     }
 
-    html { scroll-behavior: smooth; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'DM Sans', sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .serif {
+      font-family: 'Cormorant Garamond', serif;
     }
 
     /* Navigation */
-    nav {
+    .nav {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      z-index: 100;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(10, 10, 10, 0.9);
+      z-index: 1000;
+      background: rgba(250, 250, 250, 0.95);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
     }
 
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      background: var(--gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--text);
       text-decoration: none;
+      letter-spacing: -0.02em;
     }
 
     .nav-links {
       display: flex;
+      align-items: center;
       gap: 2rem;
-      list-style: none;
     }
 
-    .nav-links a {
+    .nav-link {
       color: var(--text-secondary);
       text-decoration: none;
       font-size: 0.9rem;
@@ -76,169 +87,252 @@
       transition: color 0.2s;
     }
 
-    .nav-links a:hover { color: var(--text); }
+    .nav-link:hover {
+      color: var(--text);
+    }
 
-    .nav-cta {
-      background: var(--gradient);
-      color: white;
-      padding: 0.6rem 1.2rem;
-      border-radius: 8px;
+    .nav-auth {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
       text-decoration: none;
-      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      background: var(--bg-secondary);
+      border-color: var(--text-muted);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-large {
+      padding: 0.875rem 2rem;
+      font-size: 1rem;
+    }
+
+    .lang-switcher {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: 1rem;
+      padding-left: 1rem;
+      border-left: 1px solid var(--border);
+    }
+
+    .lang-btn {
+      padding: 0.25rem 0.5rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
       font-weight: 600;
-      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
     }
 
-    .nav-cta:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    .lang-btn:hover {
+      color: var(--text);
+      background: var(--bg-secondary);
     }
 
-    /* Hero Section */
+    .lang-btn.active {
+      color: var(--text);
+      background: var(--bg-secondary);
+    }
+
+    /* Hero */
     .hero {
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
       padding: 6rem 2rem 4rem;
-      background: radial-gradient(ellipse at top, #1a1a2e 0%, var(--bg) 70%);
     }
 
-    .hero-content {
+    .hero-container {
       max-width: 1200px;
+      margin: 0 auto;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 4rem;
       align-items: center;
     }
 
-    .hero-text { animation: fadeInUp 0.8s ease; }
+    .hero-content {
+      max-width: 540px;
+    }
 
-    .badge {
+    .hero-badge {
       display: inline-block;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 0.4rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      border-radius: 100px;
+      font-size: 0.8rem;
       font-weight: 500;
-      color: var(--accent-light);
+      color: var(--text-secondary);
       margin-bottom: 1.5rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
-    .hero h1 {
-      font-size: clamp(2.5rem, 5vw, 4rem);
-      font-weight: 700;
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 4rem;
+      font-weight: 600;
       line-height: 1.1;
-      margin-bottom: 1.5rem;
       letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
     }
 
-    .hero h1 span {
-      background: var(--gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero p {
-      font-size: 1.1rem;
+    .hero-subtitle {
+      font-size: 1.25rem;
       color: var(--text-secondary);
       margin-bottom: 2rem;
-      max-width: 500px;
+      line-height: 1.7;
     }
 
-    .hero-buttons {
+    .hero-actions {
       display: flex;
       gap: 1rem;
-      flex-wrap: wrap;
+      margin-bottom: 3rem;
     }
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.9rem 1.8rem;
-      border-radius: 10px;
-      font-size: 1rem;
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+    }
+
+    .stat {
+      text-align: left;
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
       font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s;
-      border: none;
-      cursor: pointer;
+      line-height: 1;
     }
 
-    .btn-primary {
-      background: var(--gradient);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
-    }
-
-    .btn-secondary {
-      background: var(--surface);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--bg-light);
-      border-color: var(--text-muted);
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
     }
 
     .hero-visual {
       display: flex;
       justify-content: center;
-      animation: fadeIn 1s ease 0.3s both;
+      align-items: center;
     }
 
     .device-mockup {
-      position: relative;
-      max-width: 350px;
-    }
-
-    .device-frame {
-      background: #1a1a1a;
-      border-radius: 20px;
-      padding: 16px;
-      box-shadow: 0 50px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
-    }
-
-    .device-screen {
-      background: #e8e4d9;
-      border-radius: 8px;
-      aspect-ratio: 1;
+      width: 320px;
+      height: 320px;
+      background: var(--surface);
+      border: 2px solid var(--text);
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
     }
 
-    .screen-content {
-      text-align: center;
-      color: #333;
-      padding: 2rem;
+    .device-screen {
+      width: 200px;
+      height: 200px;
+      background: #f8f8f8;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      font-size: 0.7rem;
     }
 
-    .screen-content .time {
-      font-size: 3rem;
-      font-weight: 300;
-      letter-spacing: -0.02em;
+    .screen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
     }
 
-    .screen-content .date {
+    .screen-date {
+      font-family: 'Cormorant Garamond', serif;
       font-size: 0.9rem;
-      color: #666;
-      margin-top: 0.5rem;
+      font-weight: 600;
     }
 
-    /* Features Section */
+    .screen-weather {
+      text-align: right;
+    }
+
+    .screen-temp {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .screen-events {
+      flex: 1;
+      border-top: 1px solid var(--border);
+      padding-top: 0.5rem;
+    }
+
+    .screen-event {
+      padding: 0.25rem 0;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .screen-todo {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .screen-todo-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.65rem;
+    }
+
+    .checkbox {
+      width: 8px;
+      height: 8px;
+      border: 1px solid var(--text);
+    }
+
+    .checkbox.checked {
+      background: var(--text);
+    }
+
+    /* Features */
     .features {
       padding: 6rem 2rem;
-      background: var(--bg-light);
+      background: var(--surface);
     }
 
     .container {
@@ -248,248 +342,560 @@
 
     .section-header {
       text-align: center;
-      margin-bottom: 4rem;
+      max-width: 600px;
+      margin: 0 auto 4rem;
     }
 
-    .section-header h2 {
-      font-size: clamp(2rem, 4vw, 2.5rem);
-      font-weight: 700;
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
       margin-bottom: 1rem;
     }
 
-    .section-header p {
-      color: var(--text-secondary);
-      font-size: 1.1rem;
-      max-width: 600px;
-      margin: 0 auto;
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.75rem;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
     }
 
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 2rem;
     }
 
     .feature-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
       padding: 2rem;
-      transition: transform 0.2s, border-color 0.2s;
+      background: var(--bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      transition: all 0.3s;
     }
 
     .feature-card:hover {
+      border-color: var(--text-muted);
       transform: translateY(-4px);
-      border-color: var(--accent);
     }
 
     .feature-icon {
       width: 48px;
       height: 48px;
-      background: var(--gradient);
-      border-radius: 12px;
+      background: var(--text);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
       margin-bottom: 1.5rem;
     }
 
-    .feature-card h3 {
+    .feature-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: white;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .feature-title {
       font-size: 1.25rem;
       font-weight: 600;
       margin-bottom: 0.75rem;
     }
 
-    .feature-card p {
+    .feature-desc {
       color: var(--text-secondary);
       font-size: 0.95rem;
+      line-height: 1.6;
     }
 
-    /* How It Works */
+    /* How it works */
     .how-it-works {
       padding: 6rem 2rem;
     }
 
     .steps {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 2rem;
       margin-top: 3rem;
     }
 
     .step {
       text-align: center;
-      padding: 2rem;
     }
 
     .step-number {
-      width: 60px;
-      height: 60px;
-      background: var(--surface);
-      border: 2px solid var(--accent);
+      width: 48px;
+      height: 48px;
+      background: var(--text);
+      color: white;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
       font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--accent-light);
-      margin: 0 auto 1.5rem;
-    }
-
-    .step h3 {
-      font-size: 1.25rem;
       font-weight: 600;
-      margin-bottom: 0.75rem;
+      margin: 0 auto 1.25rem;
     }
 
-    .step p {
+    .step-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-desc {
       color: var(--text-secondary);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
 
-    /* CTA Section */
-    .cta {
+    /* Modules */
+    .modules {
       padding: 6rem 2rem;
-      background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%);
-      text-align: center;
+      background: var(--text);
+      color: white;
     }
 
-    .cta h2 {
-      font-size: clamp(2rem, 4vw, 3rem);
-      font-weight: 700;
+    .modules .section-label {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .modules .section-title {
+      color: white;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .module-card {
+      padding: 2rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      transition: all 0.3s;
+    }
+
+    .module-card:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .module-icon {
+      width: 40px;
+      height: 40px;
       margin-bottom: 1rem;
     }
 
-    .cta p {
-      color: var(--text-secondary);
-      font-size: 1.1rem;
-      margin-bottom: 2rem;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
+    .module-icon svg {
+      width: 40px;
+      height: 40px;
+      stroke: white;
+      fill: none;
+      stroke-width: 1.5;
     }
 
-    .cta-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      flex-wrap: wrap;
+    .module-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
     }
 
-    .cta-note {
-      margin-top: 1.5rem;
-      font-size: 0.85rem;
-      color: var(--text-muted);
+    .module-desc {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.9rem;
     }
 
-    /* Footer */
-    footer {
-      padding: 3rem 2rem;
-      border-top: 1px solid var(--border);
+    /* CTA */
+    .cta {
+      padding: 6rem 2rem;
       text-align: center;
     }
 
-    .footer-content {
+    .cta-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .cta-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      max-width: 1200px;
-      margin: 0 auto;
-      flex-wrap: wrap;
-      gap: 1rem;
     }
 
-    .footer-links {
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .footer-text {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Auth Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active {
       display: flex;
-      gap: 2rem;
-      list-style: none;
     }
 
-    .footer-links a {
+    .modal {
+      background: var(--surface);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 32px;
+      height: 32px;
+      background: var(--bg-secondary);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: color 0.2s;
+      transition: all 0.2s;
     }
 
-    .footer-links a:hover { color: var(--text); }
+    .modal-close:hover {
+      background: var(--border);
+      color: var(--text);
+    }
 
-    .footer-copy {
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--bg-secondary);
+      padding: 0.25rem;
+      border-radius: 8px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 0.625rem;
+      background: transparent;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 500;
       color: var(--text-muted);
-      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
     }
 
-    /* Animations */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
+    .auth-tab.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.2s;
+      background: var(--bg);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--text);
+      background: var(--surface);
+    }
+
+    .form-error {
+      color: #c00;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .form-error.visible {
+      display: block;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .auth-divider {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .auth-divider::before { left: 0; }
+    .auth-divider::after { right: 0; }
+
+    .success-message {
+      text-align: center;
+      padding: 2rem 0;
+      display: none;
+    }
+
+    .success-message.visible {
+      display: block;
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--text);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+
+    .success-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: white;
+      stroke-width: 3;
     }
 
     /* Responsive */
-    @media (max-width: 900px) {
-      .hero-content {
+    @media (max-width: 1024px) {
+      .hero-container {
         grid-template-columns: 1fr;
         text-align: center;
-        gap: 3rem;
       }
 
-      .hero p { margin-left: auto; margin-right: auto; }
-      .hero-buttons { justify-content: center; }
-      .hero-visual { order: -1; }
-      .device-mockup { max-width: 280px; }
+      .hero-content {
+        max-width: 100%;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .hero-stats {
+        justify-content: center;
+      }
+
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .steps {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
-    @media (max-width: 640px) {
-      nav { padding: 1rem; }
-      .nav-links { display: none; }
-      .hero { padding: 5rem 1rem 3rem; }
-      .hero h1 { font-size: 2rem; }
-      .hero-buttons { flex-direction: column; width: 100%; }
-      .btn { width: 100%; justify-content: center; }
-      .features, .how-it-works, .cta { padding: 4rem 1rem; }
-      .footer-content { flex-direction: column; }
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero-title {
+        font-size: 2.75rem;
+      }
+
+      .features-grid,
+      .modules-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-stats {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .stat {
+        text-align: center;
+      }
+
+      .footer-container {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero {
+        padding: 5rem 1rem 3rem;
+      }
+
+      .hero-title {
+        font-size: 2.25rem;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .device-mockup {
+        width: 260px;
+        height: 260px;
+      }
+
+      .device-screen {
+        width: 160px;
+        height: 160px;
+      }
     }
   </style>
 </head>
 <body>
-  <nav>
-    <a href="/" class="logo">InkFrame</a>
-    <ul class="nav-links">
-      <li><a href="#features">Features</a></li>
-      <li><a href="#how-it-works">How It Works</a></li>
-    </ul>
-    <a href="/app" class="nav-cta">Get Started</a>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">InkFrame</a>
+      <div class="nav-links">
+        <a href="#features" class="nav-link" data-i18n="nav.features">Features</a>
+        <a href="#how-it-works" class="nav-link" data-i18n="nav.howItWorks">How it works</a>
+        <a href="#modules" class="nav-link" data-i18n="nav.modules">Modules</a>
+      </div>
+      <div class="nav-auth">
+        <button class="btn btn-outline" onclick="openAuthModal('login')" data-i18n="nav.signIn">Sign In</button>
+        <button class="btn btn-primary" onclick="openAuthModal('register')" data-i18n="nav.signUp">Sign Up</button>
+        <div class="lang-switcher">
+          <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
+          <button class="lang-btn" onclick="setLanguage('pl')">PL</button>
+          <button class="lang-btn" onclick="setLanguage('de')">DE</button>
+          <button class="lang-btn" onclick="setLanguage('fr')">FR</button>
+          <button class="lang-btn" onclick="setLanguage('es')">ES</button>
+        </div>
+      </div>
+    </div>
   </nav>
 
+  <!-- Hero -->
   <section class="hero">
-    <div class="hero-content">
-      <div class="hero-text">
-        <span class="badge">Now Available</span>
-        <h1>Your Photos on<br><span>Beautiful E-Ink</span></h1>
-        <p>Upload your favorite photos, customize them with our editor, and display them on your InkFrame E-ink display. Paper-like quality, zero eye strain.</p>
-        <div class="hero-buttons">
-          <a href="/app" class="btn btn-primary">
-            Start Free
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <a href="#features" class="btn btn-secondary">Learn More</a>
+    <div class="hero-container">
+      <div class="hero-content">
+        <span class="hero-badge" data-i18n="hero.badge">E-Ink Smart Display</span>
+        <h1 class="hero-title" data-i18n="hero.title">Elegant simplicity for your daily life</h1>
+        <p class="hero-subtitle" data-i18n="hero.subtitle">InkFrame combines weather, calendar, tasks and photos in one beautiful E-ink display. Always visible, always elegant, without eye strain.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-large" onclick="openAuthModal('register')" data-i18n="hero.cta">Get Started</button>
+          <a href="#features" class="btn btn-outline btn-large" data-i18n="hero.learnMore">Learn More</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-value">200x200</div>
+            <div class="stat-label" data-i18n="hero.stat1">E-ink pixels</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">30+</div>
+            <div class="stat-label" data-i18n="hero.stat2">Days battery</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">4</div>
+            <div class="stat-label" data-i18n="hero.stat3">Smart modules</div>
+          </div>
         </div>
       </div>
       <div class="hero-visual">
         <div class="device-mockup">
-          <div class="device-frame">
-            <div class="device-screen">
-              <div class="screen-content">
-                <div class="time" id="heroTime">10:42</div>
-                <div class="date" id="heroDate">Sunday, Feb 2</div>
+          <div class="device-screen">
+            <div class="screen-header">
+              <div class="screen-date">
+                <div style="font-size: 1.5rem; font-weight: 700;">24</div>
+                <div style="font-size: 0.6rem; text-transform: uppercase;">December</div>
               </div>
+              <div class="screen-weather">
+                <div class="screen-temp">-2C</div>
+                <div style="font-size: 0.5rem;">Snow</div>
+              </div>
+            </div>
+            <div class="screen-events">
+              <div class="screen-event">09:00 Team standup</div>
+              <div class="screen-event">14:00 Client call</div>
+              <div class="screen-event">18:00 Dinner</div>
+            </div>
+            <div class="screen-todo">
+              <div class="screen-todo-item"><div class="checkbox checked"></div> Buy groceries</div>
+              <div class="screen-todo-item"><div class="checkbox"></div> Send report</div>
+              <div class="screen-todo-item"><div class="checkbox"></div> Call mom</div>
             </div>
           </div>
         </div>
@@ -497,112 +903,580 @@
     </div>
   </section>
 
+  <!-- Features -->
   <section class="features" id="features">
     <div class="container">
       <div class="section-header">
-        <h2>Everything You Need</h2>
-        <p>Powerful image editing tools designed specifically for E-ink displays.</p>
+        <div class="section-label" data-i18n="features.label">Features</div>
+        <h2 class="section-title" data-i18n="features.title">Everything you need, beautifully displayed</h2>
       </div>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon">&#128247;</div>
-          <h3>Easy Upload</h3>
-          <p>Drag and drop your photos or browse from your device. Supports JPEG, PNG, and more.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2v2m0 16v2M4 12H2m20 0h-2m-2.93-7.07l-1.41 1.41m-9.32 9.32l-1.41 1.41m0-12.14l1.41 1.41m9.32 9.32l1.41 1.41M12 6a6 6 0 100 12 6 6 0 000-12z"/></svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.f1.title">Always-On Display</h3>
+          <p class="feature-desc" data-i18n="features.f1.desc">E-ink technology means your display is always visible without using power. Gentle on eyes, perfect for any lighting.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">&#9999;</div>
-          <h3>Smart Cropping</h3>
-          <p>Crop and resize your images to fit perfectly on your E-ink display with our intuitive editor.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.f2.title">Privacy First</h3>
+          <p class="feature-desc" data-i18n="features.f2.desc">Your data stays yours. All processing happens locally on your device. No tracking, no analytics.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">&#9680;</div>
-          <h3>E-Ink Optimization</h3>
-          <p>Automatic contrast and brightness adjustments optimized for E-ink's unique characteristics.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm0 2v12h16V6H4zm2 2h4v4H6V8zm0 6h12v2H6v-2zm6-6h6v2h-6V8z"/></svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.f3.title">Modular Design</h3>
+          <p class="feature-desc" data-i18n="features.f3.desc">Choose what matters to you. Weather, calendar, tasks, or photos. Customize your dashboard your way.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">&#128260;</div>
-          <h3>Auto Sync</h3>
-          <p>Your images automatically sync to your InkFrame device. Change photos anytime from anywhere.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.f4.title">Ultra Low Power</h3>
+          <p class="feature-desc" data-i18n="features.f4.desc">Weeks of battery life on a single charge. E-ink only uses power when updating the screen.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">&#127912;</div>
-          <h3>Dithering Effects</h3>
-          <p>Apply Floyd-Steinberg or ordered dithering for artistic effects on your E-ink display.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.f5.title">Easy Setup</h3>
+          <p class="feature-desc" data-i18n="features.f5.desc">Connect to WiFi, link your account, and you are ready. No complex configuration needed.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">&#128241;</div>
-          <h3>Works Everywhere</h3>
-          <p>Access your InkFrame dashboard from any device - desktop, tablet, or mobile.</p>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <h3 class="feature-title" data-i18n="features.f6.title">Open Platform</h3>
+          <p class="feature-desc" data-i18n="features.f6.desc">Built on ESP32 with open firmware. Extend, modify, and make it truly yours.</p>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- How it works -->
   <section class="how-it-works" id="how-it-works">
     <div class="container">
       <div class="section-header">
-        <h2>Get Started in Minutes</h2>
-        <p>Setting up InkFrame is simple and straightforward.</p>
+        <div class="section-label" data-i18n="howItWorks.label">How it works</div>
+        <h2 class="section-title" data-i18n="howItWorks.title">Simple setup, powerful results</h2>
       </div>
       <div class="steps">
         <div class="step">
           <div class="step-number">1</div>
-          <h3>Create Account</h3>
-          <p>Sign up for free and get instant access to the InkFrame dashboard.</p>
+          <h3 class="step-title" data-i18n="howItWorks.s1.title">Create Account</h3>
+          <p class="step-desc" data-i18n="howItWorks.s1.desc">Sign up in seconds. No credit card required.</p>
         </div>
         <div class="step">
           <div class="step-number">2</div>
-          <h3>Connect Device</h3>
-          <p>Power on your InkFrame and link it to your account using the Device ID.</p>
+          <h3 class="step-title" data-i18n="howItWorks.s2.title">Power On Device</h3>
+          <p class="step-desc" data-i18n="howItWorks.s2.desc">Connect your InkFrame to power and WiFi.</p>
         </div>
         <div class="step">
           <div class="step-number">3</div>
-          <h3>Upload Photos</h3>
-          <p>Upload your favorite photos and customize them with our built-in editor.</p>
+          <h3 class="step-title" data-i18n="howItWorks.s3.title">Link Device</h3>
+          <p class="step-desc" data-i18n="howItWorks.s3.desc">Enter the device ID shown on your InkFrame screen.</p>
         </div>
         <div class="step">
           <div class="step-number">4</div>
-          <h3>Enjoy</h3>
-          <p>Your photos appear on your InkFrame display. Change them anytime!</p>
+          <h3 class="step-title" data-i18n="howItWorks.s4.title">Customize</h3>
+          <p class="step-desc" data-i18n="howItWorks.s4.desc">Choose modules, upload photos, and personalize.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="cta">
-    <h2>Ready to Get Started?</h2>
-    <p>Create your free account and start displaying your photos on beautiful E-ink.</p>
-    <div class="cta-buttons">
-      <a href="/app" class="btn btn-primary">Create Free Account</a>
+  <!-- Modules -->
+  <section class="modules" id="modules">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label" data-i18n="modules.label">Modules</div>
+        <h2 class="section-title" data-i18n="modules.title">Smart modules for smart living</h2>
+      </div>
+      <div class="modules-grid">
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2v2m0 16v2M4 12H2m20 0h-2m-2.93-7.07l-1.41 1.41m-9.32 9.32l-1.41 1.41m0-12.14l1.41 1.41m9.32 9.32l1.41 1.41"/><circle cx="12" cy="12" r="4"/></svg>
+          </div>
+          <h3 class="module-title" data-i18n="modules.weather.title">Weather</h3>
+          <p class="module-desc" data-i18n="modules.weather.desc">Real-time weather data with temperature, conditions, and forecasts powered by OpenWeather.</p>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <h3 class="module-title" data-i18n="modules.calendar.title">Google Calendar</h3>
+          <p class="module-desc" data-i18n="modules.calendar.desc">See your upcoming events at a glance. Syncs with your Google Calendar automatically.</p>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          </div>
+          <h3 class="module-title" data-i18n="modules.todo.title">To-Do Lists</h3>
+          <p class="module-desc" data-i18n="modules.todo.desc">Keep track of your tasks. Add, complete, and manage your to-dos from the web panel.</p>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <h3 class="module-title" data-i18n="modules.photos.title">Photo Gallery</h3>
+          <p class="module-desc" data-i18n="modules.photos.desc">Upload your favorite photos. They will cycle through on your display beautifully.</p>
+        </div>
+      </div>
     </div>
-    <p class="cta-note">No credit card required</p>
   </section>
 
-  <footer>
-    <div class="footer-content">
-      <span class="logo" style="font-size: 1.25rem;">InkFrame</span>
-      <ul class="footer-links">
-        <li><a href="#features">Features</a></li>
-        <li><a href="/app">Dashboard</a></li>
-        <li><a href="mailto:support@inkframe.com">Contact</a></li>
-      </ul>
-      <span class="footer-copy">&copy; 2026 InkFrame</span>
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <h2 class="cta-title" data-i18n="cta.title">Ready to simplify your day?</h2>
+      <p class="cta-subtitle" data-i18n="cta.subtitle">Join thousands of users who have discovered the beauty of E-ink.</p>
+      <button class="btn btn-primary btn-large" onclick="openAuthModal('register')" data-i18n="cta.button">Create Free Account</button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-logo">InkFrame</div>
+      <div class="footer-text">2024 InkFrame. <span data-i18n="footer.rights">All rights reserved.</span></div>
     </div>
   </footer>
 
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeAuthModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      <div id="authFormContainer">
+        <h2 class="modal-title" id="modalTitle" data-i18n="auth.signInTitle">Sign In</h2>
+        <p class="modal-subtitle" id="modalSubtitle" data-i18n="auth.signInSubtitle">Welcome back to InkFrame</p>
+
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')" data-i18n="auth.signIn">Sign In</button>
+          <button class="auth-tab" id="registerTab" onclick="switchAuthTab('register')" data-i18n="auth.signUp">Sign Up</button>
+        </div>
+
+        <form id="authForm" onsubmit="handleAuth(event)">
+          <div class="form-group" id="nameGroup" style="display: none;">
+            <label class="form-label" for="name" data-i18n="auth.name">Name</label>
+            <input type="text" id="name" class="form-input" data-i18n-placeholder="auth.namePlaceholder" placeholder="Your name">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email" data-i18n="auth.email">Email</label>
+            <input type="email" id="email" class="form-input" required data-i18n-placeholder="auth.emailPlaceholder" placeholder="you@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password" data-i18n="auth.password">Password</label>
+            <input type="password" id="password" class="form-input" required minlength="6" data-i18n-placeholder="auth.passwordPlaceholder" placeholder="Min. 6 characters">
+          </div>
+          <div class="form-error" id="authError"></div>
+          <button type="submit" class="btn btn-primary btn-full btn-large" id="authSubmitBtn" data-i18n="auth.signIn">Sign In</button>
+        </form>
+      </div>
+
+      <div class="success-message" id="successMessage">
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h3 class="modal-title" data-i18n="auth.successTitle">Welcome!</h3>
+        <p class="modal-subtitle" data-i18n="auth.successSubtitle">Redirecting to dashboard...</p>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Update time display
-    function updateTime() {
-      const now = new Date();
-      document.getElementById('heroTime').textContent = now.toLocaleTimeString('en-US', {
-        hour: '2-digit', minute: '2-digit', hour12: false
+    // ==================== I18N ====================
+    const translations = {
+      en: {
+        nav: { features: 'Features', howItWorks: 'How it works', modules: 'Modules', signIn: 'Sign In', signUp: 'Sign Up' },
+        hero: {
+          badge: 'E-Ink Smart Display',
+          title: 'Elegant simplicity for your daily life',
+          subtitle: 'InkFrame combines weather, calendar, tasks and photos in one beautiful E-ink display. Always visible, always elegant, without eye strain.',
+          cta: 'Get Started',
+          learnMore: 'Learn More',
+          stat1: 'E-ink pixels',
+          stat2: 'Days battery',
+          stat3: 'Smart modules'
+        },
+        features: {
+          label: 'Features',
+          title: 'Everything you need, beautifully displayed',
+          f1: { title: 'Always-On Display', desc: 'E-ink technology means your display is always visible without using power. Gentle on eyes, perfect for any lighting.' },
+          f2: { title: 'Privacy First', desc: 'Your data stays yours. All processing happens locally on your device. No tracking, no analytics.' },
+          f3: { title: 'Modular Design', desc: 'Choose what matters to you. Weather, calendar, tasks, or photos. Customize your dashboard your way.' },
+          f4: { title: 'Ultra Low Power', desc: 'Weeks of battery life on a single charge. E-ink only uses power when updating the screen.' },
+          f5: { title: 'Easy Setup', desc: 'Connect to WiFi, link your account, and you are ready. No complex configuration needed.' },
+          f6: { title: 'Open Platform', desc: 'Built on ESP32 with open firmware. Extend, modify, and make it truly yours.' }
+        },
+        howItWorks: {
+          label: 'How it works',
+          title: 'Simple setup, powerful results',
+          s1: { title: 'Create Account', desc: 'Sign up in seconds. No credit card required.' },
+          s2: { title: 'Power On Device', desc: 'Connect your InkFrame to power and WiFi.' },
+          s3: { title: 'Link Device', desc: 'Enter the device ID shown on your InkFrame screen.' },
+          s4: { title: 'Customize', desc: 'Choose modules, upload photos, and personalize.' }
+        },
+        modules: {
+          label: 'Modules',
+          title: 'Smart modules for smart living',
+          weather: { title: 'Weather', desc: 'Real-time weather data with temperature, conditions, and forecasts powered by OpenWeather.' },
+          calendar: { title: 'Google Calendar', desc: 'See your upcoming events at a glance. Syncs with your Google Calendar automatically.' },
+          todo: { title: 'To-Do Lists', desc: 'Keep track of your tasks. Add, complete, and manage your to-dos from the web panel.' },
+          photos: { title: 'Photo Gallery', desc: 'Upload your favorite photos. They will cycle through on your display beautifully.' }
+        },
+        cta: { title: 'Ready to simplify your day?', subtitle: 'Join thousands of users who have discovered the beauty of E-ink.', button: 'Create Free Account' },
+        footer: { rights: 'All rights reserved.' },
+        auth: {
+          signIn: 'Sign In', signUp: 'Sign Up',
+          signInTitle: 'Sign In', signUpTitle: 'Create Account',
+          signInSubtitle: 'Welcome back to InkFrame', signUpSubtitle: 'Start your InkFrame journey',
+          name: 'Name', namePlaceholder: 'Your name',
+          email: 'Email', emailPlaceholder: 'you@example.com',
+          password: 'Password', passwordPlaceholder: 'Min. 6 characters',
+          successTitle: 'Welcome!', successSubtitle: 'Redirecting to dashboard...',
+          errorInvalid: 'Invalid email or password', errorExists: 'Email already registered', errorGeneric: 'Something went wrong'
+        }
+      },
+      pl: {
+        nav: { features: 'Funkcje', howItWorks: 'Jak to dziala', modules: 'Moduly', signIn: 'Zaloguj', signUp: 'Rejestracja' },
+        hero: {
+          badge: 'Inteligentny wyswietlacz E-Ink',
+          title: 'Elegancka prostota dla Twojego dnia',
+          subtitle: 'InkFrame laczy pogode, kalendarz, zadania i zdjecia w jednym pieknym wyswietlaczu E-ink. Zawsze widoczny, zawsze elegancki, bez meczenia oczu.',
+          cta: 'Rozpocznij',
+          learnMore: 'Dowiedz sie wiecej',
+          stat1: 'Pikseli E-ink',
+          stat2: 'Dni baterii',
+          stat3: 'Inteligentne moduly'
+        },
+        features: {
+          label: 'Funkcje',
+          title: 'Wszystko czego potrzebujesz, pieknie wyswietlone',
+          f1: { title: 'Zawsze wlaczony', desc: 'Technologia E-ink oznacza, ze wyswietlacz jest zawsze widoczny bez zuzycia energii. Delikatny dla oczu.' },
+          f2: { title: 'Prywatnosc przede wszystkim', desc: 'Twoje dane pozostaja Twoje. Brak sledzenia, brak analityki.' },
+          f3: { title: 'Modulowa budowa', desc: 'Wybierz co jest dla Ciebie wazne. Pogoda, kalendarz, zadania lub zdjecia.' },
+          f4: { title: 'Niskie zuzycie energii', desc: 'Tygodnie pracy na jednym ladowaniu. E-ink zuzywa energie tylko przy aktualizacji.' },
+          f5: { title: 'Latwa konfiguracja', desc: 'Polacz z WiFi, dolacz konto i gotowe. Bez skomplikowanej konfiguracji.' },
+          f6: { title: 'Otwarta platforma', desc: 'Zbudowany na ESP32 z otwartym firmware. Rozszerzaj i modyfikuj.' }
+        },
+        howItWorks: {
+          label: 'Jak to dziala',
+          title: 'Prosta konfiguracja, potezne mozliwosci',
+          s1: { title: 'Zaloz konto', desc: 'Zarejestruj sie w kilka sekund. Bez karty kredytowej.' },
+          s2: { title: 'Wlacz urzadzenie', desc: 'Podlacz InkFrame do zasilania i WiFi.' },
+          s3: { title: 'Polacz urzadzenie', desc: 'Wpisz ID urzadzenia wyswietlone na ekranie.' },
+          s4: { title: 'Dostosuj', desc: 'Wybierz moduly, dodaj zdjecia i spersonalizuj.' }
+        },
+        modules: {
+          label: 'Moduly',
+          title: 'Inteligentne moduly dla inteligentnego zycia',
+          weather: { title: 'Pogoda', desc: 'Dane pogodowe w czasie rzeczywistym z temperatura i prognoza z OpenWeather.' },
+          calendar: { title: 'Kalendarz Google', desc: 'Zobacz nadchodzace wydarzenia. Synchronizacja z Kalendarzem Google.' },
+          todo: { title: 'Listy zadan', desc: 'Sledz swoje zadania. Dodawaj i zarzadzaj z panelu webowego.' },
+          photos: { title: 'Galeria zdjec', desc: 'Dodaj ulubione zdjecia. Beda sie przewijac na wyswietlaczu.' }
+        },
+        cta: { title: 'Gotowy na uproszczenie dnia?', subtitle: 'Dolacz do tysiecy uzytkownikow, ktorzy odkryli piekno E-ink.', button: 'Zaloz darmowe konto' },
+        footer: { rights: 'Wszelkie prawa zastrzezone.' },
+        auth: {
+          signIn: 'Zaloguj', signUp: 'Zarejestruj',
+          signInTitle: 'Logowanie', signUpTitle: 'Rejestracja',
+          signInSubtitle: 'Witaj z powrotem w InkFrame', signUpSubtitle: 'Rozpocznij przygode z InkFrame',
+          name: 'Imie', namePlaceholder: 'Twoje imie',
+          email: 'Email', emailPlaceholder: 'ty@przyklad.pl',
+          password: 'Haslo', passwordPlaceholder: 'Min. 6 znakow',
+          successTitle: 'Witaj!', successSubtitle: 'Przekierowanie do panelu...',
+          errorInvalid: 'Nieprawidlowy email lub haslo', errorExists: 'Email juz zarejestrowany', errorGeneric: 'Cos poszlo nie tak'
+        }
+      },
+      de: {
+        nav: { features: 'Funktionen', howItWorks: 'So funktioniert es', modules: 'Module', signIn: 'Anmelden', signUp: 'Registrieren' },
+        hero: {
+          badge: 'E-Ink Smart Display',
+          title: 'Elegante Einfachheit fur Ihren Alltag',
+          subtitle: 'InkFrame vereint Wetter, Kalender, Aufgaben und Fotos in einem schonen E-Ink-Display. Immer sichtbar, immer elegant.',
+          cta: 'Jetzt starten',
+          learnMore: 'Mehr erfahren',
+          stat1: 'E-Ink Pixel',
+          stat2: 'Tage Akku',
+          stat3: 'Smarte Module'
+        },
+        features: {
+          label: 'Funktionen',
+          title: 'Alles was Sie brauchen, schon dargestellt',
+          f1: { title: 'Always-On Display', desc: 'E-Ink-Technologie bedeutet, dass Ihr Display immer sichtbar ist, ohne Strom zu verbrauchen.' },
+          f2: { title: 'Datenschutz zuerst', desc: 'Ihre Daten bleiben Ihre. Kein Tracking, keine Analysen.' },
+          f3: { title: 'Modulares Design', desc: 'Wahlen Sie, was Ihnen wichtig ist. Wetter, Kalender, Aufgaben oder Fotos.' },
+          f4: { title: 'Niedriger Stromverbrauch', desc: 'Wochen Akkulaufzeit. E-Ink verbraucht nur beim Update Strom.' },
+          f5: { title: 'Einfache Einrichtung', desc: 'Mit WiFi verbinden, Konto verknupfen und fertig.' },
+          f6: { title: 'Offene Plattform', desc: 'Basiert auf ESP32 mit offener Firmware. Erweitern und anpassen.' }
+        },
+        howItWorks: {
+          label: 'So funktioniert es',
+          title: 'Einfache Einrichtung, leistungsstarke Ergebnisse',
+          s1: { title: 'Konto erstellen', desc: 'Registrieren Sie sich in Sekunden. Keine Kreditkarte erforderlich.' },
+          s2: { title: 'Gerat einschalten', desc: 'Verbinden Sie Ihr InkFrame mit Strom und WiFi.' },
+          s3: { title: 'Gerat verbinden', desc: 'Geben Sie die auf dem Bildschirm angezeigte Gerate-ID ein.' },
+          s4: { title: 'Anpassen', desc: 'Wahlen Sie Module, laden Sie Fotos hoch und personalisieren Sie.' }
+        },
+        modules: {
+          label: 'Module',
+          title: 'Smarte Module fur smartes Leben',
+          weather: { title: 'Wetter', desc: 'Echtzeit-Wetterdaten mit Temperatur und Vorhersage von OpenWeather.' },
+          calendar: { title: 'Google Kalender', desc: 'Sehen Sie kommende Termine auf einen Blick. Automatische Synchronisierung.' },
+          todo: { title: 'Aufgabenlisten', desc: 'Behalten Sie Ihre Aufgaben im Blick. Verwalten Sie sie uber das Web-Panel.' },
+          photos: { title: 'Fotogalerie', desc: 'Laden Sie Ihre Lieblingsfotos hoch. Sie werden auf dem Display angezeigt.' }
+        },
+        cta: { title: 'Bereit, Ihren Tag zu vereinfachen?', subtitle: 'Schliesen Sie sich Tausenden von Benutzern an, die die Schonheit von E-Ink entdeckt haben.', button: 'Kostenloses Konto erstellen' },
+        footer: { rights: 'Alle Rechte vorbehalten.' },
+        auth: {
+          signIn: 'Anmelden', signUp: 'Registrieren',
+          signInTitle: 'Anmelden', signUpTitle: 'Konto erstellen',
+          signInSubtitle: 'Willkommen zuruck bei InkFrame', signUpSubtitle: 'Starten Sie Ihre InkFrame-Reise',
+          name: 'Name', namePlaceholder: 'Ihr Name',
+          email: 'E-Mail', emailPlaceholder: 'sie@beispiel.de',
+          password: 'Passwort', passwordPlaceholder: 'Min. 6 Zeichen',
+          successTitle: 'Willkommen!', successSubtitle: 'Weiterleitung zum Dashboard...',
+          errorInvalid: 'Ungultige E-Mail oder Passwort', errorExists: 'E-Mail bereits registriert', errorGeneric: 'Etwas ist schief gelaufen'
+        }
+      },
+      fr: {
+        nav: { features: 'Fonctionnalites', howItWorks: 'Comment ca marche', modules: 'Modules', signIn: 'Connexion', signUp: 'Inscription' },
+        hero: {
+          badge: 'Ecran intelligent E-Ink',
+          title: 'Simplicite elegante pour votre quotidien',
+          subtitle: 'InkFrame combine meteo, calendrier, taches et photos dans un bel ecran E-ink. Toujours visible, toujours elegant.',
+          cta: 'Commencer',
+          learnMore: 'En savoir plus',
+          stat1: 'Pixels E-ink',
+          stat2: 'Jours de batterie',
+          stat3: 'Modules intelligents'
+        },
+        features: {
+          label: 'Fonctionnalites',
+          title: 'Tout ce dont vous avez besoin, joliment affiche',
+          f1: { title: 'Ecran toujours allume', desc: 'La technologie E-ink signifie que votre ecran est toujours visible sans consommer denergie.' },
+          f2: { title: 'Confidentialite dabord', desc: 'Vos donnees restent les votres. Pas de suivi, pas danalyse.' },
+          f3: { title: 'Design modulaire', desc: 'Choisissez ce qui compte pour vous. Meteo, calendrier, taches ou photos.' },
+          f4: { title: 'Tres faible consommation', desc: 'Des semaines dautonomie. LE-ink ne consomme que lors des mises a jour.' },
+          f5: { title: 'Configuration facile', desc: 'Connectez au WiFi, liez votre compte et cest pret.' },
+          f6: { title: 'Plateforme ouverte', desc: 'Base sur ESP32 avec firmware ouvert. Etendez et modifiez.' }
+        },
+        howItWorks: {
+          label: 'Comment ca marche',
+          title: 'Configuration simple, resultats puissants',
+          s1: { title: 'Creer un compte', desc: 'Inscrivez-vous en quelques secondes. Sans carte de credit.' },
+          s2: { title: 'Allumer lappareil', desc: 'Connectez votre InkFrame a lalimentation et au WiFi.' },
+          s3: { title: 'Lier lappareil', desc: 'Entrez lID de lappareil affiche sur lecran.' },
+          s4: { title: 'Personnaliser', desc: 'Choisissez les modules, ajoutez des photos et personnalisez.' }
+        },
+        modules: {
+          label: 'Modules',
+          title: 'Modules intelligents pour une vie intelligente',
+          weather: { title: 'Meteo', desc: 'Donnees meteo en temps reel avec temperature et previsions dOpenWeather.' },
+          calendar: { title: 'Google Agenda', desc: 'Voyez vos evenements a venir. Synchronisation automatique avec Google Agenda.' },
+          todo: { title: 'Listes de taches', desc: 'Suivez vos taches. Gerez-les depuis le panneau web.' },
+          photos: { title: 'Galerie photos', desc: 'Ajoutez vos photos preferees. Elles defileront sur votre ecran.' }
+        },
+        cta: { title: 'Pret a simplifier votre journee?', subtitle: 'Rejoignez des milliers dutilisateurs qui ont decouvert la beaute de lE-ink.', button: 'Creer un compte gratuit' },
+        footer: { rights: 'Tous droits reserves.' },
+        auth: {
+          signIn: 'Connexion', signUp: 'Inscription',
+          signInTitle: 'Connexion', signUpTitle: 'Creer un compte',
+          signInSubtitle: 'Bienvenue sur InkFrame', signUpSubtitle: 'Commencez votre aventure InkFrame',
+          name: 'Nom', namePlaceholder: 'Votre nom',
+          email: 'Email', emailPlaceholder: 'vous@exemple.fr',
+          password: 'Mot de passe', passwordPlaceholder: 'Min. 6 caracteres',
+          successTitle: 'Bienvenue!', successSubtitle: 'Redirection vers le tableau de bord...',
+          errorInvalid: 'Email ou mot de passe invalide', errorExists: 'Email deja enregistre', errorGeneric: 'Une erreur sest produite'
+        }
+      },
+      es: {
+        nav: { features: 'Caracteristicas', howItWorks: 'Como funciona', modules: 'Modulos', signIn: 'Iniciar sesion', signUp: 'Registrarse' },
+        hero: {
+          badge: 'Pantalla inteligente E-Ink',
+          title: 'Simplicidad elegante para tu dia a dia',
+          subtitle: 'InkFrame combina clima, calendario, tareas y fotos en una hermosa pantalla E-ink. Siempre visible, siempre elegante.',
+          cta: 'Comenzar',
+          learnMore: 'Saber mas',
+          stat1: 'Pixeles E-ink',
+          stat2: 'Dias de bateria',
+          stat3: 'Modulos inteligentes'
+        },
+        features: {
+          label: 'Caracteristicas',
+          title: 'Todo lo que necesitas, bellamente mostrado',
+          f1: { title: 'Pantalla siempre encendida', desc: 'La tecnologia E-ink significa que tu pantalla siempre esta visible sin usar energia.' },
+          f2: { title: 'Privacidad primero', desc: 'Tus datos son tuyos. Sin rastreo, sin analiticas.' },
+          f3: { title: 'Diseno modular', desc: 'Elige lo que te importa. Clima, calendario, tareas o fotos.' },
+          f4: { title: 'Bajo consumo', desc: 'Semanas de bateria con una carga. E-ink solo usa energia al actualizar.' },
+          f5: { title: 'Configuracion facil', desc: 'Conecta al WiFi, vincula tu cuenta y listo.' },
+          f6: { title: 'Plataforma abierta', desc: 'Construido en ESP32 con firmware abierto. Extiende y modifica.' }
+        },
+        howItWorks: {
+          label: 'Como funciona',
+          title: 'Configuracion simple, resultados poderosos',
+          s1: { title: 'Crear cuenta', desc: 'Registrate en segundos. Sin tarjeta de credito.' },
+          s2: { title: 'Encender dispositivo', desc: 'Conecta tu InkFrame a la corriente y WiFi.' },
+          s3: { title: 'Vincular dispositivo', desc: 'Ingresa el ID del dispositivo mostrado en la pantalla.' },
+          s4: { title: 'Personalizar', desc: 'Elige modulos, sube fotos y personaliza.' }
+        },
+        modules: {
+          label: 'Modulos',
+          title: 'Modulos inteligentes para una vida inteligente',
+          weather: { title: 'Clima', desc: 'Datos meteorologicos en tiempo real con temperatura y pronostico de OpenWeather.' },
+          calendar: { title: 'Google Calendar', desc: 'Ve tus proximos eventos de un vistazo. Sincronizacion automatica.' },
+          todo: { title: 'Listas de tareas', desc: 'Mantente al tanto de tus tareas. Gestionalas desde el panel web.' },
+          photos: { title: 'Galeria de fotos', desc: 'Sube tus fotos favoritas. Se mostraran en tu pantalla.' }
+        },
+        cta: { title: 'Listo para simplificar tu dia?', subtitle: 'Unete a miles de usuarios que han descubierto la belleza del E-ink.', button: 'Crear cuenta gratis' },
+        footer: { rights: 'Todos los derechos reservados.' },
+        auth: {
+          signIn: 'Iniciar sesion', signUp: 'Registrarse',
+          signInTitle: 'Iniciar sesion', signUpTitle: 'Crear cuenta',
+          signInSubtitle: 'Bienvenido de nuevo a InkFrame', signUpSubtitle: 'Comienza tu viaje con InkFrame',
+          name: 'Nombre', namePlaceholder: 'Tu nombre',
+          email: 'Email', emailPlaceholder: 'tu@ejemplo.com',
+          password: 'Contrasena', passwordPlaceholder: 'Min. 6 caracteres',
+          successTitle: 'Bienvenido!', successSubtitle: 'Redirigiendo al panel...',
+          errorInvalid: 'Email o contrasena invalidos', errorExists: 'Email ya registrado', errorGeneric: 'Algo salio mal'
+        }
+      }
+    };
+
+    let currentLang = localStorage.getItem('inkframe_lang') || 'en';
+    let authMode = 'login';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('inkframe_lang', lang);
+
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === lang.toUpperCase());
       });
-      document.getElementById('heroDate').textContent = now.toLocaleDateString('en-US', {
-        weekday: 'long', month: 'short', day: 'numeric'
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const text = getNestedTranslation(translations[lang], key);
+        if (text) el.textContent = text;
       });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const text = getNestedTranslation(translations[lang], key);
+        if (text) el.placeholder = text;
+      });
+
+      updateAuthModal();
     }
-    updateTime();
-    setInterval(updateTime, 1000);
+
+    function getNestedTranslation(obj, path) {
+      return path.split('.').reduce((o, k) => (o && o[k] !== undefined) ? o[k] : null, obj);
+    }
+
+    // ==================== AUTH ====================
+    const API_BASE = window.location.origin + '/api';
+
+    function openAuthModal(mode) {
+      authMode = mode;
+      document.getElementById('authModal').classList.add('active');
+      document.getElementById('authFormContainer').style.display = 'block';
+      document.getElementById('successMessage').classList.remove('visible');
+      document.getElementById('authError').classList.remove('visible');
+      document.getElementById('authForm').reset();
+      updateAuthModal();
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.remove('active');
+    }
+
+    function switchAuthTab(mode) {
+      authMode = mode;
+      updateAuthModal();
+    }
+
+    function updateAuthModal() {
+      const t = translations[currentLang].auth;
+      const isLogin = authMode === 'login';
+
+      document.getElementById('loginTab').classList.toggle('active', isLogin);
+      document.getElementById('registerTab').classList.toggle('active', !isLogin);
+      document.getElementById('nameGroup').style.display = isLogin ? 'none' : 'block';
+      document.getElementById('modalTitle').textContent = isLogin ? t.signInTitle : t.signUpTitle;
+      document.getElementById('modalSubtitle').textContent = isLogin ? t.signInSubtitle : t.signUpSubtitle;
+      document.getElementById('authSubmitBtn').textContent = isLogin ? t.signIn : t.signUp;
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      const t = translations[currentLang].auth;
+      const errorEl = document.getElementById('authError');
+      errorEl.classList.remove('visible');
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const name = document.getElementById('name').value;
+
+      const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
+      const body = authMode === 'login' ? { email, password } : { email, password, name };
+
+      try {
+        const res = await fetch(API_BASE + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.textContent = data.error === 'Invalid credentials' ? t.errorInvalid :
+                               data.error === 'Email already registered' ? t.errorExists : t.errorGeneric;
+          errorEl.classList.add('visible');
+          return;
+        }
+
+        // Success
+        localStorage.setItem('inkframe_token', data.token);
+        localStorage.setItem('inkframe_user', JSON.stringify(data.user));
+
+        document.getElementById('authFormContainer').style.display = 'none';
+        document.getElementById('successMessage').classList.add('visible');
+
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 1500);
+
+      } catch (err) {
+        errorEl.textContent = t.errorGeneric;
+        errorEl.classList.add('visible');
+      }
+    }
+
+    // Close modal on overlay click
+    document.getElementById('authModal').addEventListener('click', (e) => {
+      if (e.target.id === 'authModal') closeAuthModal();
+    });
+
+    // Check if already logged in
+    if (localStorage.getItem('inkframe_token')) {
+      // Optionally redirect to app
+    }
+
+    // Init
+    setLanguage(currentLang);
   </script>
 </body>
 </html>
