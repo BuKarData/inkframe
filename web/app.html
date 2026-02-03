@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>InkFrame - Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,7 +10,7 @@
   <style>
     :root {
       --bg: #fafafa;
-      --bg-secondary: #f5f5f5;
+      --bg-secondary: #f0f0f0;
       --surface: #ffffff;
       --text: #1a1a1a;
       --text-secondary: #4a4a4a;
@@ -20,6 +20,7 @@
       --accent-hover: #333333;
       --success: #2d7a2d;
       --error: #c00;
+      --warning: #b86e00;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,7 +39,7 @@
     .nav {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
+      padding: 0.75rem 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -47,29 +48,47 @@
       z-index: 100;
     }
 
+    @media (min-width: 768px) {
+      .nav { padding: 1rem 2rem; }
+    }
+
     .nav-logo {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 600;
       color: var(--text);
       text-decoration: none;
     }
 
+    @media (min-width: 768px) {
+      .nav-logo { font-size: 1.5rem; }
+    }
+
     .nav-user {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .nav-user { gap: 1rem; }
     }
 
     .user-name {
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       color: var(--text-secondary);
+      display: none;
     }
 
+    @media (min-width: 768px) {
+      .user-name { display: block; font-size: 0.9rem; }
+    }
+
+    /* Buttons */
     .btn {
-      padding: 0.5rem 1rem;
+      padding: 0.5rem 0.875rem;
       border-radius: 6px;
-      font-size: 0.875rem;
+      font-size: 0.8rem;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
@@ -77,7 +96,13 @@
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 0.375rem;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 768px) {
+      .btn { padding: 0.5rem 1rem; font-size: 0.875rem; gap: 0.5rem; }
     }
 
     .btn-ghost {
@@ -108,7 +133,7 @@
       border-color: var(--text-muted);
     }
 
-    .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8rem; }
+    .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.75rem; }
 
     .btn-danger {
       background: transparent;
@@ -118,25 +143,53 @@
 
     .btn-danger:hover { background: #fee; }
 
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-block { width: 100%; }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     /* Main Layout */
     .main {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 2rem;
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 2rem;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
-    @media (max-width: 900px) {
-      .main { grid-template-columns: 1fr; }
+    @media (min-width: 768px) {
+      .main {
+        padding: 1.5rem;
+        gap: 1.5rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .main {
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 2rem;
+      }
     }
 
     /* Sidebar */
     .sidebar {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .sidebar { gap: 1.5rem; }
     }
 
     /* Cards */
@@ -148,55 +201,67 @@
     }
 
     .card-header {
-      padding: 1rem 1.25rem;
+      padding: 0.875rem 1rem;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
+    @media (min-width: 768px) {
+      .card-header { padding: 1rem 1.25rem; }
+    }
+
     .card-title {
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-secondary);
     }
 
-    .card-body { padding: 1.25rem; }
+    @media (min-width: 768px) {
+      .card-title { font-size: 0.9rem; }
+    }
+
+    .card-body { padding: 1rem; }
+
+    @media (min-width: 768px) {
+      .card-body { padding: 1.25rem; }
+    }
 
     /* Device Card */
     .device-info {
       text-align: center;
-      padding: 1rem 0;
+      padding: 0.75rem 0;
     }
 
     .device-icon {
-      width: 64px;
-      height: 64px;
+      width: 56px;
+      height: 56px;
       background: var(--bg-secondary);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 1rem;
+      margin: 0 auto 0.75rem;
     }
 
     .device-icon svg {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       stroke: var(--text);
     }
 
     .device-id {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 600;
       margin-bottom: 0.25rem;
     }
 
     .device-status {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
     }
 
@@ -204,7 +269,7 @@
 
     .no-device {
       text-align: center;
-      padding: 2rem 1rem;
+      padding: 1.5rem 1rem;
       color: var(--text-muted);
     }
 
@@ -213,24 +278,24 @@
 
     .form-label {
       display: block;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 500;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.375rem;
       color: var(--text-secondary);
     }
 
-    .form-input {
+    .form-input, .form-select {
       width: 100%;
-      padding: 0.625rem 0.875rem;
+      padding: 0.5rem 0.75rem;
       border: 1px solid var(--border);
       border-radius: 6px;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       font-family: inherit;
       background: var(--bg);
       transition: all 0.2s;
     }
 
-    .form-input:focus {
+    .form-input:focus, .form-select:focus {
       outline: none;
       border-color: var(--text);
       background: var(--surface);
@@ -243,17 +308,73 @@
 
     .form-row .form-input { flex: 1; }
 
+    /* Range Slider */
+    .slider-group {
+      margin-bottom: 1rem;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.375rem;
+    }
+
+    .slider-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .slider-value {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-secondary);
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
     /* To-Do List */
     .todo-list {
-      max-height: 300px;
+      max-height: 240px;
       overflow-y: auto;
     }
 
     .todo-item {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 0;
+      gap: 0.625rem;
+      padding: 0.625rem 0;
       border-bottom: 1px solid var(--border);
     }
 
@@ -279,13 +400,11 @@
       border-color: var(--accent);
     }
 
-    .todo-checkbox.checked svg {
-      stroke: white;
-    }
+    .todo-checkbox.checked svg { stroke: white; }
 
     .todo-text {
       flex: 1;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
     .todo-text.completed {
@@ -313,30 +432,34 @@
 
     .todo-empty {
       text-align: center;
-      padding: 2rem 1rem;
+      padding: 1.5rem 1rem;
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
     /* Content Area */
     .content {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .content { gap: 1.5rem; }
     }
 
     /* Gallery */
-    .gallery-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
     .gallery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+      .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
+      }
     }
 
     .gallery-item {
@@ -365,8 +488,8 @@
 
     .gallery-item .delete-btn {
       position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
+      top: 0.375rem;
+      right: 0.375rem;
       width: 24px;
       height: 24px;
       background: rgba(0,0,0,0.7);
@@ -387,7 +510,7 @@
     .gallery-empty {
       grid-column: 1 / -1;
       text-align: center;
-      padding: 3rem;
+      padding: 2rem;
       color: var(--text-muted);
     }
 
@@ -395,11 +518,15 @@
     .upload-area {
       border: 2px dashed var(--border);
       border-radius: 12px;
-      padding: 2rem;
+      padding: 1.5rem 1rem;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s;
       background: var(--bg);
+    }
+
+    @media (min-width: 768px) {
+      .upload-area { padding: 2rem; }
     }
 
     .upload-area:hover {
@@ -413,43 +540,147 @@
     }
 
     .upload-icon {
-      width: 48px;
-      height: 48px;
-      margin: 0 auto 1rem;
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 0.75rem;
       color: var(--text-muted);
     }
 
     .upload-text {
       color: var(--text-secondary);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
     .upload-text strong { color: var(--accent); }
+
+    /* Image Editor */
+    .editor-container {
+      display: grid;
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .editor-container {
+        grid-template-columns: 1fr 280px;
+        gap: 1.5rem;
+      }
+    }
+
+    .editor-preview {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .preview-frame {
+      width: 200px;
+      height: 200px;
+      background: white;
+      border: 2px solid var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .preview-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .preview-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .editor-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .control-section {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 0.875rem;
+    }
+
+    .control-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+    }
+
+    .toggle-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .toggle {
+      width: 40px;
+      height: 22px;
+      background: var(--border);
+      border-radius: 11px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle.active { background: var(--accent); }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .toggle.active::after { left: 20px; }
 
     /* Settings */
     .settings-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.75rem 0;
+      padding: 0.625rem 0;
       border-bottom: 1px solid var(--border);
     }
 
     .settings-row:last-child { border-bottom: none; }
 
-    .settings-label {
-      font-size: 0.9rem;
-    }
+    .settings-label { font-size: 0.85rem; }
 
     .settings-value {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
     }
 
     .status-badge {
-      padding: 0.25rem 0.75rem;
+      padding: 0.25rem 0.625rem;
       border-radius: 100px;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 500;
     }
 
@@ -481,15 +712,17 @@
       background: var(--surface);
       border-radius: 12px;
       width: 100%;
-      max-width: 400px;
-      padding: 1.5rem;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .modal-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1.5rem;
     }
 
     .modal-title {
@@ -513,57 +746,35 @@
 
     .modal-close:hover { background: var(--border); }
 
+    .modal-body { padding: 1.25rem; }
+
     .modal-actions {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border);
       display: flex;
       gap: 0.75rem;
       justify-content: flex-end;
-      margin-top: 1.5rem;
-    }
-
-    /* Preview */
-    .preview-container {
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      padding: 1rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 220px;
-    }
-
-    .preview-frame {
-      width: 200px;
-      height: 200px;
-      background: white;
-      border: 2px solid var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .preview-frame img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
     }
 
     /* Language Selector */
     .lang-selector {
       display: flex;
-      gap: 0.25rem;
+      gap: 0.125rem;
     }
 
     .lang-btn {
-      padding: 0.25rem 0.5rem;
+      padding: 0.25rem 0.375rem;
       background: transparent;
       border: none;
       color: var(--text-muted);
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 600;
       cursor: pointer;
       border-radius: 4px;
+    }
+
+    @media (min-width: 768px) {
+      .lang-btn { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
     }
 
     .lang-btn:hover { color: var(--text); background: var(--bg-secondary); }
@@ -572,17 +783,22 @@
     /* Toast */
     .toast {
       position: fixed;
-      bottom: 2rem;
-      right: 2rem;
+      bottom: 1rem;
+      right: 1rem;
+      left: 1rem;
       background: var(--text);
       color: white;
-      padding: 1rem 1.5rem;
+      padding: 0.875rem 1.25rem;
       border-radius: 8px;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       transform: translateY(100px);
       opacity: 0;
       transition: all 0.3s;
       z-index: 2000;
+    }
+
+    @media (min-width: 768px) {
+      .toast { left: auto; min-width: 300px; }
     }
 
     .toast.visible {
@@ -593,6 +809,90 @@
     .toast.error { background: var(--error); }
     .toast.success { background: var(--success); }
 
+    /* Pending Changes Banner */
+    .pending-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--accent);
+      color: white;
+      padding: 0.75rem 1rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      z-index: 1500;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+    }
+
+    .pending-banner.visible { display: flex; }
+
+    .pending-banner-text {
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pending-banner-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-white {
+      background: white;
+      color: var(--accent);
+      border: none;
+    }
+
+    .btn-white:hover { background: #f0f0f0; }
+
+    .btn-white-outline {
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    .btn-white-outline:hover { background: rgba(255,255,255,0.1); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 0.75rem 1rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab:hover { color: var(--text); }
+
+    .tab.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
     /* Hidden */
     .hidden { display: none !important; }
 
@@ -601,7 +901,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 3rem;
+      padding: 2rem;
       color: var(--text-muted);
     }
 
@@ -610,13 +910,13 @@
     }
 
     .spinner {
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       border: 2px solid var(--border);
       border-top-color: var(--text);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin-right: 0.75rem;
+      margin-right: 0.625rem;
     }
   </style>
 </head>
@@ -657,12 +957,13 @@
                 </svg>
               </div>
               <div class="device-id" id="deviceId">-</div>
-              <div class="device-status" id="deviceStatus" data-i18n="app.linked">Linked</div>
+              <div class="device-status online" id="deviceStatus" data-i18n="app.linked">Linked</div>
             </div>
           </div>
           <div id="noDevice">
             <div class="no-device">
               <p data-i18n="app.noDevice">No device linked</p>
+              <p style="font-size: 0.75rem; margin-top: 0.5rem;" data-i18n="app.noDeviceHint">Power on your InkFrame to see its Device ID</p>
             </div>
             <div class="form-row" style="margin-top: 1rem;">
               <input type="text" id="linkDeviceId" class="form-input" data-i18n-placeholder="app.deviceIdPlaceholder" placeholder="Device ID">
@@ -681,15 +982,30 @@
           <div class="form-group">
             <label class="form-label" data-i18n="app.city">City (for weather)</label>
             <div class="form-row">
-              <input type="text" id="cityInput" class="form-input" placeholder="Warsaw">
+              <input type="text" id="cityInput" class="form-input" placeholder="Warsaw" oninput="onSettingsChange()">
               <button class="btn btn-outline btn-sm" onclick="saveSettings()" data-i18n="app.save">Save</button>
             </div>
           </div>
+
+          <div class="form-group">
+            <label class="form-label" data-i18n="app.rotation">Photo rotation interval</label>
+            <select id="rotationInterval" class="form-select" onchange="onSettingsChange(); markPendingChange('settings')">
+              <option value="5">5 min</option>
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+              <option value="60" selected>1 hour</option>
+              <option value="120">2 hours</option>
+              <option value="360">6 hours</option>
+              <option value="720">12 hours</option>
+              <option value="1440">24 hours</option>
+            </select>
+          </div>
+
           <div class="settings-row">
             <span class="settings-label" data-i18n="app.calendar">Google Calendar</span>
             <span class="status-badge disconnected" id="calendarStatus" data-i18n="app.notConnected">Not connected</span>
           </div>
-          <button class="btn btn-outline btn-sm" id="calendarBtn" onclick="connectCalendar()" style="margin-top: 0.5rem; width: 100%;" data-i18n="app.connectCalendar">Connect Calendar</button>
+          <button class="btn btn-outline btn-sm btn-block" id="calendarBtn" onclick="connectCalendar()" style="margin-top: 0.5rem;" data-i18n="app.connectCalendar">Connect Calendar</button>
         </div>
       </div>
 
@@ -700,7 +1016,7 @@
           <span class="settings-value" id="todoCount">0</span>
         </div>
         <div class="card-body">
-          <div class="form-row" style="margin-bottom: 1rem;">
+          <div class="form-row" style="margin-bottom: 0.75rem;">
             <input type="text" id="newTodoInput" class="form-input" data-i18n-placeholder="app.newTask" placeholder="New task..." onkeypress="if(event.key==='Enter')addTodo()">
             <button class="btn btn-primary btn-sm" onclick="addTodo()">+</button>
           </div>
@@ -713,49 +1029,144 @@
 
     <!-- Content Area -->
     <section class="content">
-      <!-- Upload Card -->
+      <!-- Tabs -->
       <div class="card">
-        <div class="card-header">
-          <span class="card-title" data-i18n="app.upload">Upload Photo</span>
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('gallery')" data-i18n="app.gallery">Gallery</button>
+          <button class="tab" onclick="switchTab('upload')" data-i18n="app.upload">Upload</button>
+          <button class="tab" onclick="switchTab('editor')" data-i18n="app.editor">Editor</button>
         </div>
-        <div class="card-body">
-          <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-            <div class="upload-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
+
+        <!-- Gallery Tab -->
+        <div id="tab-gallery" class="tab-content active">
+          <div class="card-body">
+            <div class="gallery-grid" id="galleryGrid">
+              <div class="gallery-empty" data-i18n="app.noPhotos">No photos uploaded yet</div>
             </div>
-            <p class="upload-text"><strong data-i18n="app.clickUpload">Click to upload</strong> <span data-i18n="app.orDrag">or drag and drop</span></p>
-          </div>
-          <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
-        </div>
-      </div>
-
-      <!-- Gallery Card -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title" data-i18n="app.gallery">Photo Gallery</span>
-          <span class="settings-value" id="imageCount">0 photos</span>
-        </div>
-        <div class="card-body">
-          <div class="gallery-grid" id="galleryGrid">
-            <div class="gallery-empty" data-i18n="app.noPhotos">No photos uploaded yet</div>
           </div>
         </div>
-      </div>
 
-      <!-- Preview Card -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title" data-i18n="app.preview">Display Preview</span>
-          <button class="btn btn-outline btn-sm" onclick="refreshPreview()" data-i18n="app.refresh">Refresh</button>
+        <!-- Upload Tab -->
+        <div id="tab-upload" class="tab-content">
+          <div class="card-body">
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+              <div class="upload-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <p class="upload-text"><strong data-i18n="app.clickUpload">Click to upload</strong> <span data-i18n="app.orDrag">or drag and drop</span></p>
+              <p class="upload-text" style="font-size: 0.75rem; margin-top: 0.5rem;">JPG, PNG, GIF, WebP</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+          </div>
         </div>
-        <div class="card-body">
-          <div class="preview-container">
-            <div class="preview-frame" id="previewFrame">
-              <span data-i18n="app.selectPhoto">Select a photo or view dashboard</span>
+
+        <!-- Editor Tab -->
+        <div id="tab-editor" class="tab-content">
+          <div class="card-body">
+            <div id="editorEmpty" class="gallery-empty" data-i18n="app.selectPhotoToEdit">Select a photo from the gallery to edit</div>
+            <div id="editorActive" class="hidden">
+              <div class="editor-container">
+                <div class="editor-preview">
+                  <div class="preview-frame" id="previewFrame">
+                    <span data-i18n="app.preview">Preview</span>
+                  </div>
+                  <p class="preview-label">200 x 200 px E-ink</p>
+                  <div style="display: flex; gap: 0.5rem; width: 100%;">
+                    <button class="btn btn-outline btn-sm" style="flex:1" onclick="resetEditor()" data-i18n="app.reset">Reset</button>
+                    <button class="btn btn-success btn-sm" style="flex:1" onclick="saveEditedImage()" data-i18n="app.saveChanges">Save</button>
+                  </div>
+                </div>
+
+                <div class="editor-controls">
+                  <!-- Dithering -->
+                  <div class="control-section">
+                    <div class="control-section-title" data-i18n="app.dithering">Dithering Algorithm</div>
+                    <select id="ditheringSelect" class="form-select" onchange="markEditorChange(); updatePreview()">
+                      <option value="floydSteinberg">Floyd-Steinberg (recommended)</option>
+                      <option value="atkinson">Atkinson (lighter)</option>
+                      <option value="sierra">Sierra Lite (fast)</option>
+                      <option value="stucki">Stucki (smooth)</option>
+                      <option value="ordered">Ordered 4x4 (retro)</option>
+                      <option value="bayer">Bayer 8x8 (pattern)</option>
+                      <option value="none">None (threshold only)</option>
+                    </select>
+                  </div>
+
+                  <!-- Adjustments -->
+                  <div class="control-section">
+                    <div class="control-section-title" data-i18n="app.adjustments">Adjustments</div>
+
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span class="slider-label" data-i18n="app.brightness">Brightness</span>
+                        <span class="slider-value" id="brightnessValue">0</span>
+                      </div>
+                      <input type="range" class="slider" id="brightnessSlider" min="-100" max="100" value="0" oninput="updateSliderValue('brightness'); markEditorChange(); updatePreview()">
+                    </div>
+
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span class="slider-label" data-i18n="app.contrast">Contrast</span>
+                        <span class="slider-value" id="contrastValue">0</span>
+                      </div>
+                      <input type="range" class="slider" id="contrastSlider" min="-100" max="100" value="0" oninput="updateSliderValue('contrast'); markEditorChange(); updatePreview()">
+                    </div>
+
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span class="slider-label" data-i18n="app.sharpness">Sharpness</span>
+                        <span class="slider-value" id="sharpnessValue">0</span>
+                      </div>
+                      <input type="range" class="slider" id="sharpnessSlider" min="0" max="100" value="0" oninput="updateSliderValue('sharpness'); markEditorChange(); updatePreview()">
+                    </div>
+
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span class="slider-label" data-i18n="app.gamma">Gamma</span>
+                        <span class="slider-value" id="gammaValue">1.0</span>
+                      </div>
+                      <input type="range" class="slider" id="gammaSlider" min="50" max="200" value="100" oninput="updateSliderValue('gamma'); markEditorChange(); updatePreview()">
+                    </div>
+                  </div>
+
+                  <!-- Transform -->
+                  <div class="control-section">
+                    <div class="control-section-title" data-i18n="app.transform">Transform</div>
+
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;">
+                      <button class="btn btn-outline btn-sm" onclick="rotateImage(-90)" title="Rotate Left">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38"/>
+                        </svg>
+                      </button>
+                      <button class="btn btn-outline btn-sm" onclick="rotateImage(90)" title="Rotate Right">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/>
+                        </svg>
+                      </button>
+                      <button class="btn btn-outline btn-sm" onclick="flipImage('h')" title="Flip Horizontal">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 20v2M12 14v2M12 8v2M12 2v2"/>
+                        </svg>
+                      </button>
+                      <button class="btn btn-outline btn-sm" onclick="flipImage('v')" title="Flip Vertical">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M3 8V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M20 12H4"/>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div class="toggle-row">
+                      <span class="toggle-label" data-i18n="app.invert">Invert colors</span>
+                      <div class="toggle" id="invertToggle" onclick="toggleInvert()"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -766,6 +1177,20 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <!-- Pending Changes Banner -->
+  <div class="pending-banner" id="pendingBanner">
+    <div class="pending-banner-text">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="pendingText" data-i18n="app.pendingChanges">Unsaved changes - display will not update until you save</span>
+    </div>
+    <div class="pending-banner-actions">
+      <button class="btn btn-sm btn-white-outline" onclick="discardChanges()" data-i18n="app.discard">Discard</button>
+      <button class="btn btn-sm btn-white" onclick="saveAndUpdateDisplay()" data-i18n="app.saveAndUpdate">Save & Update Display</button>
+    </div>
+  </div>
+
   <script>
     // ==================== CONFIG ====================
     const API_BASE = window.location.origin + '/api';
@@ -774,83 +1199,168 @@
     let currentDevice = null;
     let images = [];
     let todos = [];
-    let settings = { city: 'Warsaw' };
+    let settings = { city: 'Warsaw', rotationInterval: 60, lang: 'pl' };
+
+    // Editor state
+    let editingImage = null;
+    let editorSettings = {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 0,
+      gamma: 1.0,
+      dithering: 'floydSteinberg',
+      rotation: 0,
+      flipH: false,
+      flipV: false,
+      invert: false
+    };
+    let previewDebounce = null;
+
+    // Pending changes tracking
+    let pendingChanges = {
+      settings: false,
+      todos: false,
+      images: false,
+      editor: false
+    };
+    let originalSettings = null;
+    let originalTodos = [];
 
     // ==================== I18N ====================
     const translations = {
       en: {
         app: {
           logout: 'Logout', device: 'Device', linked: 'Linked', noDevice: 'No device linked',
+          noDeviceHint: 'Power on your InkFrame to see its Device ID',
           deviceIdPlaceholder: 'Device ID', link: 'Link', settings: 'Settings',
           city: 'City (for weather)', save: 'Save', calendar: 'Google Calendar',
           notConnected: 'Not connected', connected: 'Connected', connectCalendar: 'Connect Calendar',
           disconnectCalendar: 'Disconnect', todos: 'To-Do List', newTask: 'New task...',
-          noTasks: 'No tasks yet', upload: 'Upload Photo', clickUpload: 'Click to upload',
-          orDrag: 'or drag and drop', gallery: 'Photo Gallery', noPhotos: 'No photos uploaded yet',
-          preview: 'Display Preview', refresh: 'Refresh', selectPhoto: 'Select a photo or view dashboard',
+          noTasks: 'No tasks yet', upload: 'Upload', gallery: 'Gallery', editor: 'Editor',
+          clickUpload: 'Click to upload', orDrag: 'or drag and drop',
+          noPhotos: 'No photos uploaded yet', preview: 'Preview',
+          selectPhotoToEdit: 'Select a photo from the gallery to edit',
+          dithering: 'Dithering Algorithm', adjustments: 'Adjustments',
+          brightness: 'Brightness', contrast: 'Contrast', sharpness: 'Sharpness', gamma: 'Gamma',
+          transform: 'Transform', invert: 'Invert colors', reset: 'Reset', saveChanges: 'Save',
+          rotation: 'Photo rotation interval',
           saved: 'Saved', deleted: 'Deleted', uploaded: 'Photo uploaded', error: 'Error occurred',
-          deviceLinked: 'Device linked successfully', photos: 'photos'
+          deviceLinked: 'Device linked successfully', photos: 'photos', processing: 'Processing...',
+          pendingChanges: 'Unsaved changes - display will not update until you save',
+          discard: 'Discard', saveAndUpdate: 'Save & Update Display',
+          displayUpdated: 'Display updated!', updating: 'Updating display...',
+          notConfigured: 'Not configured', connecting: 'Connecting...',
+          calendarNotConfigured: 'Google Calendar not configured on server',
+          calendarDisconnected: 'Calendar disconnected'
         }
       },
       pl: {
         app: {
-          logout: 'Wyloguj', device: 'Urzadzenie', linked: 'Polaczone', noDevice: 'Brak polaczonego urzadzenia',
+          logout: 'Wyloguj', device: 'Urzadzenie', linked: 'Polaczone', noDevice: 'Brak urzadzenia',
+          noDeviceHint: 'Wlacz InkFrame aby zobaczyc jego ID',
           deviceIdPlaceholder: 'ID urzadzenia', link: 'Polacz', settings: 'Ustawienia',
           city: 'Miasto (dla pogody)', save: 'Zapisz', calendar: 'Kalendarz Google',
           notConnected: 'Nie polaczono', connected: 'Polaczono', connectCalendar: 'Polacz kalendarz',
           disconnectCalendar: 'Rozlacz', todos: 'Lista zadan', newTask: 'Nowe zadanie...',
-          noTasks: 'Brak zadan', upload: 'Dodaj zdjecie', clickUpload: 'Kliknij aby dodac',
-          orDrag: 'lub przeciagnij', gallery: 'Galeria zdjec', noPhotos: 'Brak zdjec',
-          preview: 'Podglad wyswietlacza', refresh: 'Odswiez', selectPhoto: 'Wybierz zdjecie lub zobacz dashboard',
+          noTasks: 'Brak zadan', upload: 'Dodaj', gallery: 'Galeria', editor: 'Edytor',
+          clickUpload: 'Kliknij aby dodac', orDrag: 'lub przeciagnij',
+          noPhotos: 'Brak zdjec', preview: 'Podglad',
+          selectPhotoToEdit: 'Wybierz zdjecie z galerii do edycji',
+          dithering: 'Algorytm ditheringu', adjustments: 'Korekty',
+          brightness: 'Jasnosc', contrast: 'Kontrast', sharpness: 'Ostrosc', gamma: 'Gamma',
+          transform: 'Transformacje', invert: 'Odwroc kolory', reset: 'Resetuj', saveChanges: 'Zapisz',
+          rotation: 'Interwal rotacji zdjec',
           saved: 'Zapisano', deleted: 'Usunieto', uploaded: 'Zdjecie dodane', error: 'Wystapil blad',
-          deviceLinked: 'Urzadzenie polaczone', photos: 'zdjec'
+          deviceLinked: 'Urzadzenie polaczone', photos: 'zdjec', processing: 'Przetwarzanie...',
+          pendingChanges: 'Niezapisane zmiany - wyswietlacz zaktualizuje sie po zapisaniu',
+          discard: 'Odrzuc', saveAndUpdate: 'Zapisz i zaktualizuj wyswietlacz',
+          displayUpdated: 'Wyswietlacz zaktualizowany!', updating: 'Aktualizowanie wyswietlacza...',
+          notConfigured: 'Nie skonfigurowano', connecting: 'Laczenie...',
+          calendarNotConfigured: 'Kalendarz Google nie jest skonfigurowany na serwerze',
+          calendarDisconnected: 'Kalendarz odlaczony'
         }
       },
       de: {
         app: {
-          logout: 'Abmelden', device: 'Gerat', linked: 'Verbunden', noDevice: 'Kein Gerat verbunden',
+          logout: 'Abmelden', device: 'Gerat', linked: 'Verbunden', noDevice: 'Kein Gerat',
+          noDeviceHint: 'Schalten Sie InkFrame ein um die ID zu sehen',
           deviceIdPlaceholder: 'Gerate-ID', link: 'Verbinden', settings: 'Einstellungen',
           city: 'Stadt (fur Wetter)', save: 'Speichern', calendar: 'Google Kalender',
           notConnected: 'Nicht verbunden', connected: 'Verbunden', connectCalendar: 'Kalender verbinden',
           disconnectCalendar: 'Trennen', todos: 'Aufgabenliste', newTask: 'Neue Aufgabe...',
-          noTasks: 'Keine Aufgaben', upload: 'Foto hochladen', clickUpload: 'Klicken zum Hochladen',
-          orDrag: 'oder ziehen', gallery: 'Fotogalerie', noPhotos: 'Keine Fotos',
-          preview: 'Display-Vorschau', refresh: 'Aktualisieren', selectPhoto: 'Wahlen Sie ein Foto',
-          saved: 'Gespeichert', deleted: 'Geloscht', uploaded: 'Foto hochgeladen', error: 'Fehler aufgetreten',
-          deviceLinked: 'Gerat verbunden', photos: 'Fotos'
+          noTasks: 'Keine Aufgaben', upload: 'Hochladen', gallery: 'Galerie', editor: 'Editor',
+          clickUpload: 'Klicken zum Hochladen', orDrag: 'oder ziehen',
+          noPhotos: 'Keine Fotos', preview: 'Vorschau',
+          selectPhotoToEdit: 'Wahlen Sie ein Foto zum Bearbeiten',
+          dithering: 'Dithering-Algorithmus', adjustments: 'Anpassungen',
+          brightness: 'Helligkeit', contrast: 'Kontrast', sharpness: 'Scharfe', gamma: 'Gamma',
+          transform: 'Transformieren', invert: 'Farben invertieren', reset: 'Zurucksetzen', saveChanges: 'Speichern',
+          rotation: 'Foto-Rotationsintervall',
+          saved: 'Gespeichert', deleted: 'Geloscht', uploaded: 'Foto hochgeladen', error: 'Fehler',
+          deviceLinked: 'Gerat verbunden', photos: 'Fotos', processing: 'Verarbeitung...',
+          pendingChanges: 'Nicht gespeicherte Anderungen - Display wird erst nach dem Speichern aktualisiert',
+          discard: 'Verwerfen', saveAndUpdate: 'Speichern & Display aktualisieren',
+          displayUpdated: 'Display aktualisiert!', updating: 'Display wird aktualisiert...',
+          notConfigured: 'Nicht konfiguriert', connecting: 'Verbinden...',
+          calendarNotConfigured: 'Google Kalender nicht auf dem Server konfiguriert',
+          calendarDisconnected: 'Kalender getrennt'
         }
       },
       fr: {
         app: {
-          logout: 'Deconnexion', device: 'Appareil', linked: 'Connecte', noDevice: 'Aucun appareil connecte',
+          logout: 'Deconnexion', device: 'Appareil', linked: 'Connecte', noDevice: 'Aucun appareil',
+          noDeviceHint: 'Allumez InkFrame pour voir son ID',
           deviceIdPlaceholder: 'ID appareil', link: 'Connecter', settings: 'Parametres',
           city: 'Ville (pour meteo)', save: 'Enregistrer', calendar: 'Google Agenda',
           notConnected: 'Non connecte', connected: 'Connecte', connectCalendar: 'Connecter agenda',
-          disconnectCalendar: 'Deconnecter', todos: 'Liste de taches', newTask: 'Nouvelle tache...',
-          noTasks: 'Aucune tache', upload: 'Ajouter photo', clickUpload: 'Cliquer pour ajouter',
-          orDrag: 'ou glisser', gallery: 'Galerie photos', noPhotos: 'Aucune photo',
-          preview: 'Apercu ecran', refresh: 'Actualiser', selectPhoto: 'Selectionnez une photo',
-          saved: 'Enregistre', deleted: 'Supprime', uploaded: 'Photo ajoutee', error: 'Erreur survenue',
-          deviceLinked: 'Appareil connecte', photos: 'photos'
+          disconnectCalendar: 'Deconnecter', todos: 'Taches', newTask: 'Nouvelle tache...',
+          noTasks: 'Aucune tache', upload: 'Ajouter', gallery: 'Galerie', editor: 'Editeur',
+          clickUpload: 'Cliquer pour ajouter', orDrag: 'ou glisser',
+          noPhotos: 'Aucune photo', preview: 'Apercu',
+          selectPhotoToEdit: 'Selectionnez une photo a modifier',
+          dithering: 'Algorithme de tramage', adjustments: 'Ajustements',
+          brightness: 'Luminosite', contrast: 'Contraste', sharpness: 'Nettete', gamma: 'Gamma',
+          transform: 'Transformer', invert: 'Inverser les couleurs', reset: 'Reinitialiser', saveChanges: 'Enregistrer',
+          rotation: 'Intervalle de rotation',
+          saved: 'Enregistre', deleted: 'Supprime', uploaded: 'Photo ajoutee', error: 'Erreur',
+          deviceLinked: 'Appareil connecte', photos: 'photos', processing: 'Traitement...',
+          pendingChanges: 'Modifications non enregistrees - l\'ecran se mettra a jour apres enregistrement',
+          discard: 'Annuler', saveAndUpdate: 'Enregistrer & mettre a jour',
+          displayUpdated: 'Ecran mis a jour!', updating: 'Mise a jour de l\'ecran...',
+          notConfigured: 'Non configure', connecting: 'Connexion...',
+          calendarNotConfigured: 'Google Agenda non configure sur le serveur',
+          calendarDisconnected: 'Agenda deconnecte'
         }
       },
       es: {
         app: {
-          logout: 'Cerrar sesion', device: 'Dispositivo', linked: 'Vinculado', noDevice: 'Sin dispositivo vinculado',
+          logout: 'Salir', device: 'Dispositivo', linked: 'Vinculado', noDevice: 'Sin dispositivo',
+          noDeviceHint: 'Encienda InkFrame para ver su ID',
           deviceIdPlaceholder: 'ID dispositivo', link: 'Vincular', settings: 'Configuracion',
           city: 'Ciudad (para clima)', save: 'Guardar', calendar: 'Google Calendar',
           notConnected: 'No conectado', connected: 'Conectado', connectCalendar: 'Conectar calendario',
-          disconnectCalendar: 'Desconectar', todos: 'Lista de tareas', newTask: 'Nueva tarea...',
-          noTasks: 'Sin tareas', upload: 'Subir foto', clickUpload: 'Clic para subir',
-          orDrag: 'o arrastrar', gallery: 'Galeria de fotos', noPhotos: 'Sin fotos',
-          preview: 'Vista previa', refresh: 'Actualizar', selectPhoto: 'Selecciona una foto',
-          saved: 'Guardado', deleted: 'Eliminado', uploaded: 'Foto subida', error: 'Error ocurrido',
-          deviceLinked: 'Dispositivo vinculado', photos: 'fotos'
+          disconnectCalendar: 'Desconectar', todos: 'Tareas', newTask: 'Nueva tarea...',
+          noTasks: 'Sin tareas', upload: 'Subir', gallery: 'Galeria', editor: 'Editor',
+          clickUpload: 'Clic para subir', orDrag: 'o arrastrar',
+          noPhotos: 'Sin fotos', preview: 'Vista previa',
+          selectPhotoToEdit: 'Seleccione una foto para editar',
+          dithering: 'Algoritmo de difuminado', adjustments: 'Ajustes',
+          brightness: 'Brillo', contrast: 'Contraste', sharpness: 'Nitidez', gamma: 'Gamma',
+          transform: 'Transformar', invert: 'Invertir colores', reset: 'Restablecer', saveChanges: 'Guardar',
+          rotation: 'Intervalo de rotacion',
+          saved: 'Guardado', deleted: 'Eliminado', uploaded: 'Foto subida', error: 'Error',
+          deviceLinked: 'Dispositivo vinculado', photos: 'fotos', processing: 'Procesando...',
+          pendingChanges: 'Cambios sin guardar - la pantalla se actualizara al guardar',
+          discard: 'Descartar', saveAndUpdate: 'Guardar y actualizar pantalla',
+          displayUpdated: 'Pantalla actualizada!', updating: 'Actualizando pantalla...',
+          notConfigured: 'No configurado', connecting: 'Conectando...',
+          calendarNotConfigured: 'Google Calendar no configurado en el servidor',
+          calendarDisconnected: 'Calendario desconectado'
         }
       }
     };
 
-    let currentLang = localStorage.getItem('inkframe_lang') || 'en';
+    let currentLang = localStorage.getItem('inkframe_lang') || 'pl';
 
     function setLanguage(lang) {
       currentLang = lang;
@@ -867,7 +1377,7 @@
       for (const k of keys) {
         value = value?.[k];
       }
-      return value || key;
+      return value || translations['en']?.app?.[keys[keys.length - 1]] || key;
     }
 
     function applyTranslations() {
@@ -879,6 +1389,14 @@
         const text = t(el.getAttribute('data-i18n-placeholder'));
         if (text) el.placeholder = text;
       });
+    }
+
+    // ==================== TABS ====================
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector(`.tab[onclick*="${tabName}"]`).classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
     }
 
     // ==================== AUTH ====================
@@ -951,20 +1469,39 @@
       const res = await api('/settings');
       if (!res) return;
       const data = await res.json();
-      settings = data.settings || { city: 'Warsaw' };
+      settings = data.settings || { city: 'Warsaw', rotationInterval: 60, lang: 'pl' };
       document.getElementById('cityInput').value = settings.city || '';
+      document.getElementById('rotationInterval').value = settings.rotationInterval || 60;
+      // Store original for discard functionality
+      originalSettings = { ...settings };
+    }
+
+    function onSettingsChange() {
+      const cityChanged = document.getElementById('cityInput').value.trim() !== (originalSettings?.city || '');
+      const intervalChanged = parseInt(document.getElementById('rotationInterval').value) !== (originalSettings?.rotationInterval || 60);
+      if (cityChanged || intervalChanged) {
+        markPendingChange('settings');
+      } else {
+        clearPendingChange('settings');
+      }
     }
 
     async function saveSettings() {
+      // This is now just for quick save without display update
       const city = document.getElementById('cityInput').value.trim();
+      const rotationInterval = parseInt(document.getElementById('rotationInterval').value);
+
       const res = await api('/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city })
+        body: JSON.stringify({ city, rotationInterval, lang: currentLang })
       });
 
       if (res && res.ok) {
         settings.city = city;
+        settings.rotationInterval = rotationInterval;
+        originalSettings = { ...settings };
+        clearPendingChange('settings');
         showToast(t('app.saved'), 'success');
       }
     }
@@ -978,33 +1515,45 @@
       const statusEl = document.getElementById('calendarStatus');
       const btnEl = document.getElementById('calendarBtn');
 
-      if (data.connected) {
+      if (!data.configured) {
+        // Calendar not configured on server
+        statusEl.textContent = t('app.notConfigured');
+        statusEl.className = 'status-badge disconnected';
+        btnEl.textContent = t('app.connectCalendar');
+        btnEl.disabled = true;
+        btnEl.title = 'Google Calendar API not configured';
+      } else if (data.connected) {
         statusEl.textContent = t('app.connected');
         statusEl.className = 'status-badge connected';
         btnEl.textContent = t('app.disconnectCalendar');
+        btnEl.disabled = false;
         btnEl.onclick = disconnectCalendar;
       } else {
         statusEl.textContent = t('app.notConnected');
         statusEl.className = 'status-badge disconnected';
         btnEl.textContent = t('app.connectCalendar');
+        btnEl.disabled = false;
         btnEl.onclick = connectCalendar;
       }
     }
 
     async function connectCalendar() {
+      showToast(t('app.connecting'), '');
       const res = await api('/calendar/auth-url');
       if (!res) return;
       const data = await res.json();
 
       if (data.authUrl) {
+        // Redirect to Google OAuth
         window.location.href = data.authUrl;
       } else {
-        showToast(data.error || 'Calendar not configured', 'error');
+        showToast(data.error || t('app.calendarNotConfigured'), 'error');
       }
     }
 
     async function disconnectCalendar() {
       await api('/calendar/disconnect', { method: 'DELETE' });
+      showToast(t('app.calendarDisconnected'), 'success');
       loadCalendarStatus();
     }
 
@@ -1055,6 +1604,8 @@
       if (res && res.ok) {
         input.value = '';
         loadTodos();
+        // Mark pending change for display refresh
+        markPendingChange('todos');
       }
     }
 
@@ -1069,11 +1620,15 @@
       });
 
       loadTodos();
+      // Mark pending change for display refresh
+      markPendingChange('todos');
     }
 
     async function deleteTodo(id) {
       await api(`/todos/${id}`, { method: 'DELETE' });
       loadTodos();
+      // Mark pending change for display refresh
+      markPendingChange('todos');
     }
 
     // ==================== IMAGES ====================
@@ -1087,7 +1642,6 @@
 
     function renderGallery() {
       const container = document.getElementById('galleryGrid');
-      document.getElementById('imageCount').textContent = `${images.length} ${t('app.photos')}`;
 
       if (images.length === 0) {
         container.innerHTML = `<div class="gallery-empty" data-i18n="app.noPhotos">${t('app.noPhotos')}</div>`;
@@ -1095,7 +1649,7 @@
       }
 
       container.innerHTML = images.map(img => `
-        <div class="gallery-item" onclick="selectImage('${img.id}')">
+        <div class="gallery-item ${editingImage?.id === img.id ? 'selected' : ''}" onclick="selectImage('${img.id}')">
           <img src="${img.url}" alt="${escapeHtml(img.title || '')}" loading="lazy">
           <button class="delete-btn" onclick="event.stopPropagation(); deleteImage('${img.id}')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1109,7 +1663,13 @@
     function selectImage(id) {
       const img = images.find(i => i.id === id);
       if (img) {
-        document.getElementById('previewFrame').innerHTML = `<img src="${img.url}" alt="">`;
+        editingImage = img;
+        resetEditorSettings();
+        document.getElementById('editorEmpty').classList.add('hidden');
+        document.getElementById('editorActive').classList.remove('hidden');
+        switchTab('editor');
+        renderGallery();
+        updatePreview();
       }
     }
 
@@ -1117,7 +1677,15 @@
       const res = await api(`/images/${id}`, { method: 'DELETE' });
       if (res && res.ok) {
         showToast(t('app.deleted'), 'success');
+        if (editingImage?.id === id) {
+          editingImage = null;
+          clearPendingChange('editor');
+          document.getElementById('editorEmpty').classList.remove('hidden');
+          document.getElementById('editorActive').classList.add('hidden');
+        }
         loadImages();
+        // Mark pending change - display should update
+        markPendingChange('images');
       }
     }
 
@@ -1125,9 +1693,12 @@
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (file) uploadImage(file);
+      event.target.value = '';
     }
 
     async function uploadImage(file) {
+      showToast(t('app.processing'), '');
+
       const formData = new FormData();
       formData.append('image', file);
 
@@ -1140,12 +1711,15 @@
       if (res.ok) {
         showToast(t('app.uploaded'), 'success');
         loadImages();
+        switchTab('gallery');
+        // Mark that there are changes to sync to display
+        markPendingChange('images');
       } else {
         showToast(t('app.error'), 'error');
       }
     }
 
-    // Setup drag and drop
+    // Drag and drop
     const uploadArea = document.getElementById('uploadArea');
     uploadArea.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -1163,24 +1737,231 @@
       }
     });
 
-    // ==================== PREVIEW ====================
-    async function refreshPreview() {
-      if (!currentDevice) return;
+    // ==================== EDITOR ====================
+    function resetEditorSettings() {
+      editorSettings = {
+        brightness: 0,
+        contrast: 0,
+        sharpness: 0,
+        gamma: 1.0,
+        dithering: 'floydSteinberg',
+        rotation: 0,
+        flipH: false,
+        flipV: false,
+        invert: false
+      };
+      updateEditorUI();
+    }
 
-      const frame = document.getElementById('previewFrame');
-      frame.innerHTML = '<div class="spinner"></div>';
+    function updateEditorUI() {
+      document.getElementById('brightnessSlider').value = editorSettings.brightness;
+      document.getElementById('contrastSlider').value = editorSettings.contrast;
+      document.getElementById('sharpnessSlider').value = editorSettings.sharpness;
+      document.getElementById('gammaSlider').value = editorSettings.gamma * 100;
+      document.getElementById('ditheringSelect').value = editorSettings.dithering;
+      document.getElementById('invertToggle').classList.toggle('active', editorSettings.invert);
+
+      updateSliderValue('brightness');
+      updateSliderValue('contrast');
+      updateSliderValue('sharpness');
+      updateSliderValue('gamma');
+    }
+
+    function updateSliderValue(name) {
+      const slider = document.getElementById(`${name}Slider`);
+      const valueEl = document.getElementById(`${name}Value`);
+      let val = parseFloat(slider.value);
+
+      if (name === 'gamma') {
+        val = val / 100;
+        valueEl.textContent = val.toFixed(1);
+        editorSettings.gamma = val;
+      } else {
+        valueEl.textContent = val;
+        editorSettings[name] = val;
+      }
+    }
+
+    function rotateImage(degrees) {
+      editorSettings.rotation = (editorSettings.rotation + degrees + 360) % 360;
+      markEditorChange();
+      updatePreview();
+    }
+
+    function flipImage(direction) {
+      if (direction === 'h') {
+        editorSettings.flipH = !editorSettings.flipH;
+      } else {
+        editorSettings.flipV = !editorSettings.flipV;
+      }
+      markEditorChange();
+      updatePreview();
+    }
+
+    function toggleInvert() {
+      editorSettings.invert = !editorSettings.invert;
+      document.getElementById('invertToggle').classList.toggle('active', editorSettings.invert);
+      markEditorChange();
+      updatePreview();
+    }
+
+    function resetEditor() {
+      resetEditorSettings();
+      updatePreview();
+    }
+
+    async function updatePreview() {
+      if (!editingImage) return;
+
+      // Debounce
+      if (previewDebounce) clearTimeout(previewDebounce);
+      previewDebounce = setTimeout(async () => {
+        const frame = document.getElementById('previewFrame');
+        frame.innerHTML = '<div class="spinner"></div>';
+
+        editorSettings.dithering = document.getElementById('ditheringSelect').value;
+
+        try {
+          const res = await api('/images/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageId: editingImage.id,
+              ...editorSettings
+            })
+          });
+
+          if (res && res.ok) {
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            frame.innerHTML = `<img src="${url}" alt="Preview">`;
+          } else {
+            frame.innerHTML = `<span>${t('app.error')}</span>`;
+          }
+        } catch (err) {
+          frame.innerHTML = `<span>${t('app.error')}</span>`;
+        }
+      }, 300);
+    }
+
+    async function saveEditedImage() {
+      if (!editingImage) return;
+
+      showToast(t('app.processing'), '');
+
+      const res = await api('/images/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageId: editingImage.id,
+          ...editorSettings
+        })
+      });
+
+      if (res && res.ok) {
+        clearPendingChange('editor');
+        showToast(t('app.saved'), 'success');
+        loadImages();
+        // After saving, mark that we should update the display
+        markPendingChange('images');
+      } else {
+        showToast(t('app.error'), 'error');
+      }
+    }
+
+    // Mark editor as having pending changes when any adjustment is made
+    function markEditorChange() {
+      markPendingChange('editor');
+    }
+
+    // ==================== PENDING CHANGES ====================
+    function markPendingChange(type) {
+      pendingChanges[type] = true;
+      updatePendingBanner();
+    }
+
+    function clearPendingChange(type) {
+      pendingChanges[type] = false;
+      updatePendingBanner();
+    }
+
+    function hasPendingChanges() {
+      return Object.values(pendingChanges).some(v => v);
+    }
+
+    function updatePendingBanner() {
+      const banner = document.getElementById('pendingBanner');
+      const textEl = document.getElementById('pendingText');
+      if (hasPendingChanges()) {
+        banner.classList.add('visible');
+        textEl.textContent = t('app.pendingChanges');
+      } else {
+        banner.classList.remove('visible');
+      }
+    }
+
+    async function saveAndUpdateDisplay() {
+      showToast(t('app.updating'), '');
 
       try {
-        const res = await fetch(`${API_BASE}/device/${currentDevice.id}/dashboard`);
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          // Convert binary to viewable image would need canvas
-          frame.innerHTML = `<span>Dashboard ready for device</span>`;
+        // Save settings if changed
+        if (pendingChanges.settings) {
+          const city = document.getElementById('cityInput').value.trim();
+          const rotationInterval = parseInt(document.getElementById('rotationInterval').value);
+          await api('/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city, rotationInterval, lang: currentLang })
+          });
         }
-      } catch (err) {
-        frame.innerHTML = `<span>${t('app.error')}</span>`;
+
+        // Save edited image if in editor mode
+        if (pendingChanges.editor && editingImage) {
+          await api('/images/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageId: editingImage.id,
+              ...editorSettings
+            })
+          });
+        }
+
+        // Trigger device display refresh
+        if (currentDevice) {
+          await api(`/devices/${currentDevice.id}/refresh`, { method: 'POST' });
+        }
+
+        // Clear all pending flags
+        Object.keys(pendingChanges).forEach(k => pendingChanges[k] = false);
+        updatePendingBanner();
+
+        // Reload data to sync
+        await Promise.all([loadSettings(), loadImages()]);
+
+        showToast(t('app.displayUpdated'), 'success');
+      } catch (error) {
+        console.error('Save error:', error);
+        showToast(t('app.error'), 'error');
       }
+    }
+
+    function discardChanges() {
+      // Restore original settings
+      if (originalSettings) {
+        document.getElementById('cityInput').value = originalSettings.city || '';
+        document.getElementById('rotationInterval').value = originalSettings.rotationInterval || 60;
+      }
+
+      // Reset editor
+      if (editingImage) {
+        resetEditorSettings();
+        updatePreview();
+      }
+
+      // Clear pending flags
+      Object.keys(pendingChanges).forEach(k => pendingChanges[k] = false);
+      updatePendingBanner();
     }
 
     // ==================== UTILITIES ====================

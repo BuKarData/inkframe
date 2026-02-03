@@ -24,6 +24,7 @@ const weatherModule = require('./modules/weather');
 const todoModule = require('./modules/todo');
 const calendarModule = require('./modules/calendar');
 const dashboardRenderer = require('./modules/dashboard-renderer');
+const imageProcessor = require('./modules/image-processor');
 
 // ==================== CONFIGURATION ====================
 
@@ -283,6 +284,57 @@ app.get('/api/devices', authenticate, async (req, res, next) => {
   }
 });
 
+// Trigger device refresh - marks that device should fetch new content
+app.post('/api/devices/:deviceId/refresh', authenticate, async (req, res, next) => {
+  try {
+    const { deviceId } = req.params;
+    const device = await db.getDeviceById(deviceId);
+
+    if (!device) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    if (device.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Mark device as needing refresh (increment refresh counter)
+    const refreshVersion = (device.refreshVersion || 0) + 1;
+    await db.updateDevice(deviceId, {
+      refreshVersion,
+      lastRefreshRequest: new Date().toISOString()
+    });
+
+    console.log(`Device ${deviceId} refresh triggered, version: ${refreshVersion}`);
+    res.json({ message: 'Device refresh triggered', refreshVersion });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Check if device should refresh (called by ESP32)
+app.get('/api/devices/:deviceId/should-refresh', optionalAuth, async (req, res, next) => {
+  try {
+    const { deviceId } = req.params;
+    const { currentVersion = 0 } = req.query;
+
+    const device = await db.getDeviceById(deviceId);
+    if (!device) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    const serverVersion = device.refreshVersion || 0;
+    const shouldRefresh = serverVersion > parseInt(currentVersion);
+
+    res.json({
+      shouldRefresh,
+      currentVersion: serverVersion
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Debug endpoint - list all registered devices
 app.get('/api/debug/devices', async (req, res) => {
   const allDevices = await db.getDevices();
@@ -405,6 +457,98 @@ app.delete('/api/images/:id', authenticate, async (req, res, next) => {
     await db.deleteImage(id);
     res.json({ message: 'Image deleted' });
   } catch (error) {
+    next(error);
+  }
+});
+
+// Image preview with processing (for editor)
+app.post('/api/images/preview', authenticate, async (req, res, next) => {
+  try {
+    const { imageId, brightness, contrast, sharpness, gamma, dithering, rotation, flipH, flipV, invert } = req.body;
+
+    if (!imageId) {
+      return res.status(400).json({ error: 'Image ID required' });
+    }
+
+    const image = await db.getImageById(imageId);
+    if (!image) return res.status(404).json({ error: 'Image not found' });
+    if (image.userId !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+
+    const imagePath = path.join(UPLOAD_DIR, image.filename);
+
+    try {
+      await fs.access(imagePath);
+    } catch {
+      return res.status(404).json({ error: 'Image file not found' });
+    }
+
+    const imageBuffer = await fs.readFile(imagePath);
+
+    const result = await imageProcessor.processImage(imageBuffer, {
+      width: 200,
+      height: 200,
+      brightness: brightness || 0,
+      contrast: contrast || 0,
+      sharpness: sharpness || 0,
+      gamma: gamma || 1.0,
+      dithering: dithering || 'floydSteinberg',
+      rotation: rotation || 0,
+      flipH: flipH || false,
+      flipV: flipV || false,
+      invert: invert || false
+    });
+
+    res.set('Content-Type', 'image/png');
+    res.send(result.png);
+  } catch (error) {
+    console.error('Preview error:', error);
+    next(error);
+  }
+});
+
+// Apply processing and save image
+app.post('/api/images/process', authenticate, async (req, res, next) => {
+  try {
+    const { imageId, brightness, contrast, sharpness, gamma, dithering, rotation, flipH, flipV, invert } = req.body;
+
+    if (!imageId) {
+      return res.status(400).json({ error: 'Image ID required' });
+    }
+
+    const image = await db.getImageById(imageId);
+    if (!image) return res.status(404).json({ error: 'Image not found' });
+    if (image.userId !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+
+    const imagePath = path.join(UPLOAD_DIR, image.filename);
+
+    try {
+      await fs.access(imagePath);
+    } catch {
+      return res.status(404).json({ error: 'Image file not found' });
+    }
+
+    const imageBuffer = await fs.readFile(imagePath);
+
+    const result = await imageProcessor.processImage(imageBuffer, {
+      width: 200,
+      height: 200,
+      brightness: brightness || 0,
+      contrast: contrast || 0,
+      sharpness: sharpness || 0,
+      gamma: gamma || 1.0,
+      dithering: dithering || 'floydSteinberg',
+      rotation: rotation || 0,
+      flipH: flipH || false,
+      flipV: flipV || false,
+      invert: invert || false
+    });
+
+    // Save processed image
+    await fs.writeFile(imagePath, result.png);
+
+    res.json({ message: 'Image processed successfully' });
+  } catch (error) {
+    console.error('Process error:', error);
     next(error);
   }
 });
@@ -658,8 +802,9 @@ app.get('/api/calendar/callback', async (req, res, next) => {
 
 app.get('/api/calendar/status', authenticate, async (req, res, next) => {
   try {
-    const connected = await calendarModule.isConnected(req.user.id);
-    res.json({ connected });
+    const configured = calendarModule.isConfigured();
+    const connected = configured ? await calendarModule.isConnected(req.user.id) : false;
+    res.json({ connected, configured });
   } catch (error) {
     next(error);
   }
@@ -699,8 +844,8 @@ app.get('/api/settings', authenticate, async (req, res, next) => {
 
 app.put('/api/settings', authenticate, async (req, res, next) => {
   try {
-    const { city, displayMode, lat, lon } = req.body;
-    await db.updateUserSettings(req.user.id, { city, displayMode, lat, lon });
+    const { city, displayMode, lat, lon, rotationInterval, lang } = req.body;
+    await db.updateUserSettings(req.user.id, { city, displayMode, lat, lon, rotationInterval, lang });
     res.json({ message: 'Settings updated' });
   } catch (error) {
     next(error);

@@ -86,6 +86,8 @@ async function createTables() {
       name TEXT DEFAULT 'My InkFrame',
       current_image TEXT,
       brightness INTEGER DEFAULT 100,
+      refresh_version INTEGER DEFAULT 0,
+      last_refresh_request TIMESTAMP,
       registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
@@ -110,6 +112,21 @@ async function createTables() {
     }
   }
   console.log('Database tables created/verified');
+
+  // Run migrations for existing tables (add new columns if missing)
+  const migrations = [
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS refresh_version INTEGER DEFAULT 0',
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_refresh_request TIMESTAMP'
+  ];
+
+  for (const migration of migrations) {
+    try {
+      await pool.query(migration);
+    } catch (err) {
+      // Column might already exist or syntax not supported, ignore
+    }
+  }
+  console.log('Database migrations completed');
 
   // Log existing data count
   try {
@@ -223,6 +240,8 @@ async function getDevices() {
         name: row.name,
         currentImage: row.current_image,
         brightness: row.brightness,
+        refreshVersion: row.refresh_version || 0,
+        lastRefreshRequest: row.last_refresh_request,
         registeredAt: row.registered_at,
         lastSeen: row.last_seen
       };
@@ -259,6 +278,8 @@ async function getDeviceById(id) {
       name: row.name,
       currentImage: row.current_image,
       brightness: row.brightness,
+      refreshVersion: row.refresh_version || 0,
+      lastRefreshRequest: row.last_refresh_request,
       registeredAt: row.registered_at,
       lastSeen: row.last_seen
     };
@@ -277,6 +298,8 @@ async function getDevicesByUserId(userId) {
       name: row.name,
       currentImage: row.current_image,
       brightness: row.brightness,
+      refreshVersion: row.refresh_version || 0,
+      lastRefreshRequest: row.last_refresh_request,
       registeredAt: row.registered_at,
       lastSeen: row.last_seen
     }));
@@ -325,6 +348,14 @@ async function updateDevice(id, updates) {
     if (updates.lastSeen !== undefined) {
       setClauses.push(`last_seen = $${paramIndex++}`);
       values.push(updates.lastSeen);
+    }
+    if (updates.refreshVersion !== undefined) {
+      setClauses.push(`refresh_version = $${paramIndex++}`);
+      values.push(updates.refreshVersion);
+    }
+    if (updates.lastRefreshRequest !== undefined) {
+      setClauses.push(`last_refresh_request = $${paramIndex++}`);
+      values.push(updates.lastRefreshRequest);
     }
 
     if (setClauses.length > 0) {
@@ -452,7 +483,7 @@ async function deleteImage(id) {
 async function getUserSettings(userId) {
   if (usePostgres) {
     try {
-      // Create settings table if not exists
+      // Create settings table if not exists (with new fields)
       await pool.query(`
         CREATE TABLE IF NOT EXISTS user_settings (
           user_id TEXT PRIMARY KEY,
@@ -460,9 +491,17 @@ async function getUserSettings(userId) {
           display_mode TEXT DEFAULT 'dashboard',
           lat REAL,
           lon REAL,
+          rotation_interval INTEGER DEFAULT 60,
+          lang TEXT DEFAULT 'pl',
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+
+      // Add columns if they don't exist (for migration)
+      try {
+        await pool.query('ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS rotation_interval INTEGER DEFAULT 60');
+        await pool.query('ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT \'pl\'');
+      } catch (e) { /* columns may already exist */ }
 
       const result = await pool.query('SELECT * FROM user_settings WHERE user_id = $1', [userId]);
       if (result.rows.length === 0) return null;
@@ -471,7 +510,9 @@ async function getUserSettings(userId) {
         city: row.city,
         displayMode: row.display_mode,
         lat: row.lat,
-        lon: row.lon
+        lon: row.lon,
+        rotationInterval: row.rotation_interval || 60,
+        lang: row.lang || 'pl'
       };
     } catch (err) {
       console.error('Get settings error:', err.message);
@@ -493,15 +534,17 @@ async function updateUserSettings(userId, settings) {
   if (usePostgres) {
     try {
       await pool.query(`
-        INSERT INTO user_settings (user_id, city, display_mode, lat, lon)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO user_settings (user_id, city, display_mode, lat, lon, rotation_interval, lang)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (user_id) DO UPDATE SET
           city = COALESCE($2, user_settings.city),
           display_mode = COALESCE($3, user_settings.display_mode),
           lat = COALESCE($4, user_settings.lat),
           lon = COALESCE($5, user_settings.lon),
+          rotation_interval = COALESCE($6, user_settings.rotation_interval),
+          lang = COALESCE($7, user_settings.lang),
           updated_at = CURRENT_TIMESTAMP
-      `, [userId, settings.city, settings.displayMode, settings.lat, settings.lon]);
+      `, [userId, settings.city, settings.displayMode, settings.lat, settings.lon, settings.rotationInterval, settings.lang]);
     } catch (err) {
       console.error('Update settings error:', err.message);
     }

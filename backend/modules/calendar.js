@@ -1,5 +1,13 @@
 /**
  * Google Calendar Module - OAuth2 Integration
+ *
+ * SETUP INSTRUCTIONS:
+ * 1. Go to Google Cloud Console: https://console.cloud.google.com/
+ * 2. Create a new project or select existing
+ * 3. Enable the Google Calendar API
+ * 4. Create OAuth 2.0 credentials (Web application type)
+ * 5. Add authorized redirect URI: https://www.eink-luvia.com/api/calendar/callback
+ * 6. Set environment variables: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
  */
 
 const { google } = require('googleapis');
@@ -16,8 +24,16 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://www.eink
 let pool = null;
 let usePostgres = false;
 
+// Log configuration status at startup
+console.log('=== Google Calendar Configuration ===');
+console.log(`GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET'}`);
+console.log(`GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET'}`);
+console.log(`GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}`);
+console.log('=====================================');
+
 function getOAuth2Client() {
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    console.warn('Google Calendar OAuth not configured - missing credentials');
     return null;
   }
   return new google.auth.OAuth2(
@@ -25,6 +41,10 @@ function getOAuth2Client() {
     GOOGLE_CLIENT_SECRET,
     GOOGLE_REDIRECT_URI
   );
+}
+
+function isConfigured() {
+  return !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET);
 }
 
 async function initCalendarModule(dbPool, isPostgres) {
@@ -63,14 +83,23 @@ function getAuthUrl(userId) {
 
 async function handleCallback(code, userId) {
   const oauth2Client = getOAuth2Client();
-  if (!oauth2Client) return false;
+  if (!oauth2Client) {
+    console.error('Calendar callback failed: OAuth client not configured');
+    return false;
+  }
 
   try {
+    console.log(`Processing calendar callback for user: ${userId}`);
     const { tokens } = await oauth2Client.getToken(code);
+    console.log(`Received tokens - access_token: ${tokens.access_token ? 'YES' : 'NO'}, refresh_token: ${tokens.refresh_token ? 'YES' : 'NO'}`);
     await saveTokens(userId, tokens);
+    console.log(`Calendar tokens saved for user: ${userId}`);
     return true;
   } catch (error) {
     console.error('Calendar OAuth error:', error.message);
+    if (error.response) {
+      console.error('OAuth error details:', error.response.data);
+    }
     return false;
   }
 }
@@ -131,8 +160,16 @@ async function getTokens(userId) {
 }
 
 async function getUpcomingEvents(userId, maxResults = 5) {
+  if (!isConfigured()) {
+    console.log('Calendar not configured - returning empty events');
+    return [];
+  }
+
   const tokens = await getTokens(userId);
-  if (!tokens) return null;
+  if (!tokens) {
+    console.log(`No calendar tokens for user: ${userId}`);
+    return null;
+  }
 
   const oauth2Client = getOAuth2Client();
   if (!oauth2Client) return null;
@@ -141,12 +178,19 @@ async function getUpcomingEvents(userId, maxResults = 5) {
 
   // Refresh token if expired
   if (tokens.expiry_date && tokens.expiry_date < Date.now()) {
+    console.log(`Refreshing expired token for user: ${userId}`);
     try {
       const { credentials } = await oauth2Client.refreshAccessToken();
       await saveTokens(userId, credentials);
       oauth2Client.setCredentials(credentials);
+      console.log('Token refreshed successfully');
     } catch (error) {
       console.error('Token refresh error:', error.message);
+      // Token might be revoked - clear it
+      if (error.message.includes('invalid_grant')) {
+        console.log('Token revoked, clearing stored tokens');
+        await disconnect(userId);
+      }
       return null;
     }
   }
@@ -158,6 +202,7 @@ async function getUpcomingEvents(userId, maxResults = 5) {
     const endOfDay = new Date(now);
     endOfDay.setHours(23, 59, 59, 999);
 
+    console.log(`Fetching calendar events for user: ${userId}`);
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin: now.toISOString(),
@@ -167,15 +212,21 @@ async function getUpcomingEvents(userId, maxResults = 5) {
       orderBy: 'startTime'
     });
 
-    return response.data.items.map(event => ({
+    const events = response.data.items.map(event => ({
       id: event.id,
       summary: event.summary || 'No title',
       start: event.start.dateTime || event.start.date,
       end: event.end.dateTime || event.end.date,
       allDay: !event.start.dateTime
     }));
+
+    console.log(`Found ${events.length} calendar events`);
+    return events;
   } catch (error) {
     console.error('Calendar API error:', error.message);
+    if (error.response) {
+      console.error('API error details:', error.response.data);
+    }
     return null;
   }
 }
@@ -205,5 +256,6 @@ module.exports = {
   handleCallback,
   getUpcomingEvents,
   isConnected,
-  disconnect
+  disconnect,
+  isConfigured
 };
