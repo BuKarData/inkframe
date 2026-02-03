@@ -370,56 +370,85 @@ app.post('/api/images/upload', authenticate, upload.single('image'), async (req,
 
     console.log(`Image upload by user ${req.user.id}: ${req.file.originalname}`);
 
-    const { deviceId, title, adjustments: adjustmentsStr } = req.body;
-    let adjustments = {};
-    try { if (adjustmentsStr) adjustments = JSON.parse(adjustmentsStr); } catch (e) {}
+    const imageId = uuidv4();
+    const filename = `${imageId}.png`;
 
-    const displayConfig = DISPLAY_CONFIGS['default'];
-    const targetWidth = displayConfig.width;
-    const targetHeight = displayConfig.height;
-
-    const filename = `${uuidv4()}.png`;
-    const filepath = path.join(UPLOAD_DIR, filename);
-
-    // Ensure upload directory exists
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
-
-    // Process image
-    let pipeline = sharp(req.file.buffer)
-      .resize(targetWidth, targetHeight, { fit: 'cover', position: 'center' })
-      .grayscale()
-      .normalize();
-
-    if (adjustments.brightness || adjustments.contrast) {
-      const brightness = (adjustments.brightness || 0) / 100;
-      const contrast = 1 + (adjustments.contrast || 0) / 100;
-      pipeline = pipeline.modulate({ brightness: 1 + brightness })
-        .linear(contrast, -(128 * contrast) + 128);
-    }
-
-    const outputBuffer = await pipeline.png({ compressionLevel: 9 }).toBuffer();
-    await fs.writeFile(filepath, outputBuffer);
-
-    console.log(`Image saved to: ${filepath}`);
-
+    // Store original image in database for persistence (Railway has ephemeral filesystem)
     const image = await db.createImage({
-      id: uuidv4(),
+      id: imageId,
       userId: req.user.id,
       filename,
-      originalName: req.file.originalname
+      originalName: req.file.originalname,
+      imageData: req.file.buffer,
+      mimeType: req.file.mimetype
     });
+
+    // Also save to filesystem for quick access (will be regenerated from DB if missing)
+    try {
+      await fs.mkdir(UPLOAD_DIR, { recursive: true });
+      const displayConfig = DISPLAY_CONFIGS['default'];
+      const processedBuffer = await sharp(req.file.buffer)
+        .resize(displayConfig.width, displayConfig.height, { fit: 'cover', position: 'center' })
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+      await fs.writeFile(path.join(UPLOAD_DIR, filename), processedBuffer);
+    } catch (fsErr) {
+      console.log('Filesystem write skipped (ephemeral):', fsErr.message);
+    }
 
     res.status(201).json({
       image: {
         id: image.id,
-        url: `/uploads/${filename}`,
-        title: image.title,
-        width: image.width,
-        height: image.height
+        url: `/api/images/${image.id}/file`,
+        title: image.originalName,
+        width: 200,
+        height: 200
       }
     });
   } catch (error) {
     console.error('Upload error:', error);
+    next(error);
+  }
+});
+
+// Serve image file from database (persistent) or filesystem (cache)
+app.get('/api/images/:id/file', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const image = await db.getImageById(id);
+    if (!image) return res.status(404).json({ error: 'Image not found' });
+
+    // Try filesystem first (faster)
+    const filepath = path.join(UPLOAD_DIR, image.filename);
+    try {
+      await fs.access(filepath);
+      return res.sendFile(filepath);
+    } catch {
+      // Filesystem miss - get from database
+    }
+
+    // Get from database
+    const imageData = await db.getImageData(id);
+    if (!imageData || !imageData.imageData) {
+      return res.status(404).json({ error: 'Image data not found' });
+    }
+
+    // Regenerate processed image from original
+    const displayConfig = DISPLAY_CONFIGS['default'];
+    const processedBuffer = await sharp(imageData.imageData)
+      .resize(displayConfig.width, displayConfig.height, { fit: 'cover', position: 'center' })
+      .png()
+      .toBuffer();
+
+    // Cache to filesystem for next time
+    try {
+      await fs.mkdir(UPLOAD_DIR, { recursive: true });
+      await fs.writeFile(filepath, processedBuffer);
+    } catch {}
+
+    res.set('Content-Type', 'image/png');
+    res.send(processedBuffer);
+  } catch (error) {
     next(error);
   }
 });
@@ -431,7 +460,7 @@ app.get('/api/images', authenticate, async (req, res, next) => {
     res.json({
       images: userImages.map(i => ({
         id: i.id,
-        url: `/uploads/${i.filename}`,
+        url: `/api/images/${i.id}/file`,
         title: i.originalName || 'Untitled',
         createdAt: i.uploadedAt
       }))
@@ -464,7 +493,8 @@ app.delete('/api/images/:id', authenticate, async (req, res, next) => {
 // Image preview with processing (for editor)
 app.post('/api/images/preview', authenticate, async (req, res, next) => {
   try {
-    const { imageId, brightness, contrast, sharpness, gamma, dithering, rotation, flipH, flipV, invert } = req.body;
+    const { imageId, brightness, contrast, sharpness, gamma, dithering, rotation, flipH, flipV, invert,
+            cropX, cropY, cropW, cropH, textOverlay, textPosition, textSize } = req.body;
 
     if (!imageId) {
       return res.status(400).json({ error: 'Image ID required' });
@@ -474,15 +504,20 @@ app.post('/api/images/preview', authenticate, async (req, res, next) => {
     if (!image) return res.status(404).json({ error: 'Image not found' });
     if (image.userId !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
 
-    const imagePath = path.join(UPLOAD_DIR, image.filename);
-
-    try {
-      await fs.access(imagePath);
-    } catch {
-      return res.status(404).json({ error: 'Image file not found' });
+    // Try to get image from database first (persistent), then filesystem
+    let imageBuffer;
+    const imageData = await db.getImageData(imageId);
+    if (imageData && imageData.imageData) {
+      imageBuffer = imageData.imageData;
+    } else {
+      // Fallback to filesystem
+      const imagePath = path.join(UPLOAD_DIR, image.filename);
+      try {
+        imageBuffer = await fs.readFile(imagePath);
+      } catch {
+        return res.status(404).json({ error: 'Image file not found. Please re-upload the image.' });
+      }
     }
-
-    const imageBuffer = await fs.readFile(imagePath);
 
     const result = await imageProcessor.processImage(imageBuffer, {
       width: 200,
@@ -495,7 +530,14 @@ app.post('/api/images/preview', authenticate, async (req, res, next) => {
       rotation: rotation || 0,
       flipH: flipH || false,
       flipV: flipV || false,
-      invert: invert || false
+      invert: invert || false,
+      cropX: cropX || 0,
+      cropY: cropY || 0,
+      cropW: cropW || 1,
+      cropH: cropH || 1,
+      textOverlay: textOverlay || '',
+      textPosition: textPosition || 'bottom',
+      textSize: textSize || 'medium'
     });
 
     res.set('Content-Type', 'image/png');
@@ -509,7 +551,8 @@ app.post('/api/images/preview', authenticate, async (req, res, next) => {
 // Apply processing and save image
 app.post('/api/images/process', authenticate, async (req, res, next) => {
   try {
-    const { imageId, brightness, contrast, sharpness, gamma, dithering, rotation, flipH, flipV, invert } = req.body;
+    const { imageId, brightness, contrast, sharpness, gamma, dithering, rotation, flipH, flipV, invert,
+            cropX, cropY, cropW, cropH, textOverlay, textPosition, textSize } = req.body;
 
     if (!imageId) {
       return res.status(400).json({ error: 'Image ID required' });
@@ -519,15 +562,19 @@ app.post('/api/images/process', authenticate, async (req, res, next) => {
     if (!image) return res.status(404).json({ error: 'Image not found' });
     if (image.userId !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
 
-    const imagePath = path.join(UPLOAD_DIR, image.filename);
-
-    try {
-      await fs.access(imagePath);
-    } catch {
-      return res.status(404).json({ error: 'Image file not found' });
+    // Get original image from database
+    let imageBuffer;
+    const imageData = await db.getImageData(imageId);
+    if (imageData && imageData.imageData) {
+      imageBuffer = imageData.imageData;
+    } else {
+      const imagePath = path.join(UPLOAD_DIR, image.filename);
+      try {
+        imageBuffer = await fs.readFile(imagePath);
+      } catch {
+        return res.status(404).json({ error: 'Image file not found. Please re-upload.' });
+      }
     }
-
-    const imageBuffer = await fs.readFile(imagePath);
 
     const result = await imageProcessor.processImage(imageBuffer, {
       width: 200,
@@ -540,11 +587,24 @@ app.post('/api/images/process', authenticate, async (req, res, next) => {
       rotation: rotation || 0,
       flipH: flipH || false,
       flipV: flipV || false,
-      invert: invert || false
+      invert: invert || false,
+      cropX: cropX || 0,
+      cropY: cropY || 0,
+      cropW: cropW || 1,
+      cropH: cropH || 1,
+      textOverlay: textOverlay || '',
+      textPosition: textPosition || 'bottom',
+      textSize: textSize || 'medium'
     });
 
-    // Save processed image
-    await fs.writeFile(imagePath, result.png);
+    // Save processed image to database
+    await db.updateImageData(imageId, imageData?.imageData || imageBuffer, result.png);
+
+    // Also update filesystem cache
+    try {
+      const imagePath = path.join(UPLOAD_DIR, image.filename);
+      await fs.writeFile(imagePath, result.png);
+    } catch {}
 
     res.json({ message: 'Image processed successfully' });
   } catch (error) {
@@ -580,7 +640,8 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
         weather,
         events: events || [],
         todos: todos || [],
-        date: new Date()
+        date: new Date(),
+        lang: settings.lang || 'pl'
       });
 
       if (!bitmap) {
@@ -604,15 +665,16 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
     const userImages = await db.getImagesByUserId(device.userId);
     if (userImages.length === 0) {
       // No images - return dashboard instead
-      const settings = await db.getUserSettings(device.userId) || { city: 'Warsaw' };
-      const weather = settings.city ? await weatherModule.getWeatherByCity(settings.city) : null;
+      const userSettings = await db.getUserSettings(device.userId) || { city: 'Warsaw', lang: 'pl' };
+      const weather = userSettings.city ? await weatherModule.getWeatherByCity(userSettings.city) : null;
       const todos = await todoModule.getActiveTodos(device.userId, 4);
 
       const bitmap = await dashboardRenderer.renderDashboardBitmap({
         weather,
         events: [],
         todos: todos || [],
-        date: new Date()
+        date: new Date(),
+        lang: userSettings.lang || 'pl'
       });
 
       res.set({
@@ -675,14 +737,19 @@ app.get('/api/device/:deviceId/image-info', optionalAuth, async (req, res, next)
   try {
     const { deviceId } = req.params;
     const device = await db.getDeviceById(deviceId);
-    if (!device || !device.userId) return res.json({ total: 0, currentIndex: 0 });
+    if (!device || !device.userId) return res.json({ total: 0, currentIndex: 0, rotateMinutes: 60 });
 
-    const userImages = await db.getImagesByUserId(device.userId);
+    const [userImages, settings] = await Promise.all([
+      db.getImagesByUserId(device.userId),
+      db.getUserSettings(device.userId)
+    ]);
 
     res.json({
       total: userImages.length,
       currentIndex: 0,
-      rotateMinutes: 60
+      rotateMinutes: settings?.rotationInterval || 60,
+      autoImageMode: settings?.autoImageMode || 0,
+      refreshVersion: device.refreshVersion || 0
     });
   } catch (error) {
     next(error);
@@ -844,8 +911,8 @@ app.get('/api/settings', authenticate, async (req, res, next) => {
 
 app.put('/api/settings', authenticate, async (req, res, next) => {
   try {
-    const { city, displayMode, lat, lon, rotationInterval, lang } = req.body;
-    await db.updateUserSettings(req.user.id, { city, displayMode, lat, lon, rotationInterval, lang });
+    const { city, displayMode, lat, lon, rotationInterval, lang, autoImageMode } = req.body;
+    await db.updateUserSettings(req.user.id, { city, displayMode, lat, lon, rotationInterval, lang, autoImageMode });
     res.json({ message: 'Settings updated' });
   } catch (error) {
     next(error);
@@ -876,7 +943,8 @@ app.get('/api/device/:deviceId/dashboard', optionalAuth, async (req, res, next) 
       weather,
       events: events || [],
       todos: todos || [],
-      date: new Date()
+      date: new Date(),
+      lang: settings.lang || 'pl'
     });
 
     if (!bitmap) {

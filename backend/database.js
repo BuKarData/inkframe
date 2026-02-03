@@ -91,12 +91,15 @@ async function createTables() {
       registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
-    // Images table
+    // Images table - stores image data directly in PostgreSQL for persistence
     `CREATE TABLE IF NOT EXISTS images (
       id TEXT PRIMARY KEY,
       user_id TEXT,
       filename TEXT NOT NULL,
       original_name TEXT,
+      image_data BYTEA,
+      processed_data BYTEA,
+      mime_type TEXT DEFAULT 'image/png',
       uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     // Indexes for faster queries
@@ -116,7 +119,10 @@ async function createTables() {
   // Run migrations for existing tables (add new columns if missing)
   const migrations = [
     'ALTER TABLE devices ADD COLUMN IF NOT EXISTS refresh_version INTEGER DEFAULT 0',
-    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_refresh_request TIMESTAMP'
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_refresh_request TIMESTAMP',
+    'ALTER TABLE images ADD COLUMN IF NOT EXISTS image_data BYTEA',
+    'ALTER TABLE images ADD COLUMN IF NOT EXISTS processed_data BYTEA',
+    'ALTER TABLE images ADD COLUMN IF NOT EXISTS mime_type TEXT DEFAULT \'image/png\''
   ];
 
   for (const migration of migrations) {
@@ -439,8 +445,8 @@ async function getImagesByUserId(userId) {
 async function createImage(image) {
   if (usePostgres) {
     await pool.query(
-      'INSERT INTO images (id, user_id, filename, original_name) VALUES ($1, $2, $3, $4)',
-      [image.id, image.userId, image.filename, image.originalName || null]
+      'INSERT INTO images (id, user_id, filename, original_name, image_data, mime_type) VALUES ($1, $2, $3, $4, $5, $6)',
+      [image.id, image.userId, image.filename, image.originalName || null, image.imageData || null, image.mimeType || 'image/png']
     );
   } else {
     const images = await getImages();
@@ -448,6 +454,35 @@ async function createImage(image) {
     await saveImages(images);
   }
   return image;
+}
+
+async function updateImageData(id, imageData, processedData = null) {
+  if (usePostgres) {
+    if (processedData) {
+      await pool.query(
+        'UPDATE images SET image_data = $1, processed_data = $2 WHERE id = $3',
+        [imageData, processedData, id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE images SET image_data = $1 WHERE id = $2',
+        [imageData, id]
+      );
+    }
+  }
+}
+
+async function getImageData(id) {
+  if (usePostgres) {
+    const result = await pool.query('SELECT image_data, processed_data, mime_type FROM images WHERE id = $1', [id]);
+    if (result.rows.length === 0) return null;
+    return {
+      imageData: result.rows[0].image_data,
+      processedData: result.rows[0].processed_data,
+      mimeType: result.rows[0].mime_type
+    };
+  }
+  return null;
 }
 
 async function getImageById(id) {
@@ -493,6 +528,7 @@ async function getUserSettings(userId) {
           lon REAL,
           rotation_interval INTEGER DEFAULT 60,
           lang TEXT DEFAULT 'pl',
+          auto_image_mode INTEGER DEFAULT 0,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -501,6 +537,7 @@ async function getUserSettings(userId) {
       try {
         await pool.query('ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS rotation_interval INTEGER DEFAULT 60');
         await pool.query('ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT \'pl\'');
+        await pool.query('ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS auto_image_mode INTEGER DEFAULT 0');
       } catch (e) { /* columns may already exist */ }
 
       const result = await pool.query('SELECT * FROM user_settings WHERE user_id = $1', [userId]);
@@ -512,7 +549,8 @@ async function getUserSettings(userId) {
         lat: row.lat,
         lon: row.lon,
         rotationInterval: row.rotation_interval || 60,
-        lang: row.lang || 'pl'
+        lang: row.lang || 'pl',
+        autoImageMode: row.auto_image_mode || 0
       };
     } catch (err) {
       console.error('Get settings error:', err.message);
@@ -534,8 +572,8 @@ async function updateUserSettings(userId, settings) {
   if (usePostgres) {
     try {
       await pool.query(`
-        INSERT INTO user_settings (user_id, city, display_mode, lat, lon, rotation_interval, lang)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO user_settings (user_id, city, display_mode, lat, lon, rotation_interval, lang, auto_image_mode)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT (user_id) DO UPDATE SET
           city = COALESCE($2, user_settings.city),
           display_mode = COALESCE($3, user_settings.display_mode),
@@ -543,8 +581,9 @@ async function updateUserSettings(userId, settings) {
           lon = COALESCE($5, user_settings.lon),
           rotation_interval = COALESCE($6, user_settings.rotation_interval),
           lang = COALESCE($7, user_settings.lang),
+          auto_image_mode = COALESCE($8, user_settings.auto_image_mode),
           updated_at = CURRENT_TIMESTAMP
-      `, [userId, settings.city, settings.displayMode, settings.lat, settings.lon, settings.rotationInterval, settings.lang]);
+      `, [userId, settings.city, settings.displayMode, settings.lat, settings.lon, settings.rotationInterval, settings.lang, settings.autoImageMode]);
     } catch (err) {
       console.error('Update settings error:', err.message);
     }
@@ -604,6 +643,8 @@ module.exports = {
   createImage,
   getImageById,
   deleteImage,
+  updateImageData,
+  getImageData,
   // User Settings
   getUserSettings,
   updateUserSettings

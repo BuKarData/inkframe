@@ -36,6 +36,18 @@ const BAYER_8X8 = [
 ].map(row => row.map(v => (v / 64) * 255));
 
 /**
+ * Escape special characters for XML/SVG
+ */
+function escapeXml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
  * Apply Floyd-Steinberg dithering
  */
 function floydSteinbergDither(pixels, width, height) {
@@ -263,7 +275,10 @@ async function processImage(inputBuffer, options = {}) {
     cropY = 0,             // crop start Y (0-1)
     cropW = 1,             // crop width (0-1)
     cropH = 1,             // crop height (0-1)
-    fit = 'cover'          // cover, contain, fill
+    fit = 'cover',         // cover, contain, fill
+    textOverlay = '',      // text to add
+    textPosition = 'bottom', // top, bottom, center
+    textSize = 'medium'    // small, medium, large
   } = options;
 
   try {
@@ -329,6 +344,38 @@ async function processImage(inputBuffer, options = {}) {
 
     // Normalize to improve contrast
     pipeline = pipeline.normalize();
+
+    // Add text overlay if specified
+    if (textOverlay && textOverlay.trim()) {
+      const fontSize = textSize === 'small' ? 12 : textSize === 'large' ? 20 : 16;
+      const padding = 4;
+
+      // Calculate text position
+      let textY;
+      if (textPosition === 'top') {
+        textY = padding + fontSize;
+      } else if (textPosition === 'center') {
+        textY = Math.floor(height / 2);
+      } else {
+        textY = height - padding - 4;
+      }
+
+      // Create SVG text overlay with white background bar for readability
+      const svgText = `
+        <svg width="${width}" height="${height}">
+          <rect x="0" y="${textY - fontSize - 2}" width="${width}" height="${fontSize + 8}" fill="white"/>
+          <text x="${Math.floor(width / 2)}" y="${textY}"
+                font-family="sans-serif" font-size="${fontSize}" font-weight="bold"
+                text-anchor="middle" fill="black">${escapeXml(textOverlay.trim())}</text>
+        </svg>
+      `;
+
+      pipeline = pipeline.composite([{
+        input: Buffer.from(svgText),
+        top: 0,
+        left: 0
+      }]);
+    }
 
     // Get raw pixel data
     const { data, info } = await pipeline

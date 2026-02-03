@@ -1001,6 +1001,18 @@
             </select>
           </div>
 
+          <div class="form-group">
+            <label class="form-label" data-i18n="app.autoImageMode">Auto switch to photos</label>
+            <select id="autoImageMode" class="form-select" onchange="onSettingsChange(); markPendingChange('settings')">
+              <option value="0" data-i18n="app.disabled">Disabled</option>
+              <option value="5">5 min</option>
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+              <option value="60">1 hour</option>
+            </select>
+            <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;" data-i18n="app.autoImageModeHint">After inactivity</p>
+          </div>
+
           <div class="settings-row">
             <span class="settings-label" data-i18n="app.calendar">Google Calendar</span>
             <span class="status-badge disconnected" id="calendarStatus" data-i18n="app.notConnected">Not connected</span>
@@ -1165,6 +1177,63 @@
                       <div class="toggle" id="invertToggle" onclick="toggleInvert()"></div>
                     </div>
                   </div>
+
+                  <!-- Crop -->
+                  <div class="control-section">
+                    <div class="control-section-title" data-i18n="app.crop">Crop</div>
+
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span class="slider-label" data-i18n="app.cropX">Horizontal offset</span>
+                        <span class="slider-value" id="cropXValue">0%</span>
+                      </div>
+                      <input type="range" class="slider" id="cropXSlider" min="0" max="50" value="0" oninput="updateCrop('cropX'); markEditorChange(); updatePreview()">
+                    </div>
+
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span class="slider-label" data-i18n="app.cropY">Vertical offset</span>
+                        <span class="slider-value" id="cropYValue">0%</span>
+                      </div>
+                      <input type="range" class="slider" id="cropYSlider" min="0" max="50" value="0" oninput="updateCrop('cropY'); markEditorChange(); updatePreview()">
+                    </div>
+
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span class="slider-label" data-i18n="app.cropZoom">Zoom</span>
+                        <span class="slider-value" id="cropZoomValue">100%</span>
+                      </div>
+                      <input type="range" class="slider" id="cropZoomSlider" min="50" max="100" value="100" oninput="updateCrop('cropZoom'); markEditorChange(); updatePreview()">
+                    </div>
+                  </div>
+
+                  <!-- Text Overlay -->
+                  <div class="control-section">
+                    <div class="control-section-title" data-i18n="app.textOverlay">Text Overlay</div>
+
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                      <input type="text" class="form-input" id="textOverlayInput" placeholder="Enter text..." oninput="markEditorChange(); updatePreview()" maxlength="30">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                      <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" data-i18n="app.textPosition">Position</label>
+                        <select id="textPositionSelect" class="form-select" onchange="markEditorChange(); updatePreview()">
+                          <option value="top" data-i18n="app.top">Top</option>
+                          <option value="center" data-i18n="app.center">Center</option>
+                          <option value="bottom" selected data-i18n="app.bottom">Bottom</option>
+                        </select>
+                      </div>
+                      <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" data-i18n="app.textSize">Size</label>
+                        <select id="textSizeSelect" class="form-select" onchange="markEditorChange(); updatePreview()">
+                          <option value="small" data-i18n="app.small">Small</option>
+                          <option value="medium" selected data-i18n="app.medium">Medium</option>
+                          <option value="large" data-i18n="app.large">Large</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1212,7 +1281,14 @@
       rotation: 0,
       flipH: false,
       flipV: false,
-      invert: false
+      invert: false,
+      cropX: 0,
+      cropY: 0,
+      cropW: 1,
+      cropH: 1,
+      textOverlay: '',
+      textPosition: 'bottom',
+      textSize: 'medium'
     };
     let previewDebounce = null;
 
@@ -1251,33 +1327,45 @@
           displayUpdated: 'Display updated!', updating: 'Updating display...',
           notConfigured: 'Not configured', connecting: 'Connecting...',
           calendarNotConfigured: 'Google Calendar not configured on server',
-          calendarDisconnected: 'Calendar disconnected'
+          calendarDisconnected: 'Calendar disconnected',
+          crop: 'Crop', cropX: 'Horizontal offset', cropY: 'Vertical offset', cropZoom: 'Zoom',
+          textOverlay: 'Text Overlay', textPosition: 'Position', textSize: 'Size',
+          top: 'Top', center: 'Center', bottom: 'Bottom',
+          small: 'Small', medium: 'Medium', large: 'Large',
+          autoImageMode: 'Auto switch to photos', autoImageModeHint: 'After inactivity',
+          disabled: 'Disabled'
         }
       },
       pl: {
         app: {
-          logout: 'Wyloguj', device: 'Urzadzenie', linked: 'Polaczone', noDevice: 'Brak urzadzenia',
-          noDeviceHint: 'Wlacz InkFrame aby zobaczyc jego ID',
-          deviceIdPlaceholder: 'ID urzadzenia', link: 'Polacz', settings: 'Ustawienia',
+          logout: 'Wyloguj', device: 'Urządzenie', linked: 'Połączone', noDevice: 'Brak urządzenia',
+          noDeviceHint: 'Włącz InkFrame aby zobaczyć jego ID',
+          deviceIdPlaceholder: 'ID urządzenia', link: 'Połącz', settings: 'Ustawienia',
           city: 'Miasto (dla pogody)', save: 'Zapisz', calendar: 'Kalendarz Google',
-          notConnected: 'Nie polaczono', connected: 'Polaczono', connectCalendar: 'Polacz kalendarz',
-          disconnectCalendar: 'Rozlacz', todos: 'Lista zadan', newTask: 'Nowe zadanie...',
-          noTasks: 'Brak zadan', upload: 'Dodaj', gallery: 'Galeria', editor: 'Edytor',
-          clickUpload: 'Kliknij aby dodac', orDrag: 'lub przeciagnij',
-          noPhotos: 'Brak zdjec', preview: 'Podglad',
-          selectPhotoToEdit: 'Wybierz zdjecie z galerii do edycji',
+          notConnected: 'Nie połączono', connected: 'Połączono', connectCalendar: 'Połącz kalendarz',
+          disconnectCalendar: 'Rozłącz', todos: 'Lista zadań', newTask: 'Nowe zadanie...',
+          noTasks: 'Brak zadań', upload: 'Dodaj', gallery: 'Galeria', editor: 'Edytor',
+          clickUpload: 'Kliknij aby dodać', orDrag: 'lub przeciągnij',
+          noPhotos: 'Brak zdjęć', preview: 'Podgląd',
+          selectPhotoToEdit: 'Wybierz zdjęcie z galerii do edycji',
           dithering: 'Algorytm ditheringu', adjustments: 'Korekty',
-          brightness: 'Jasnosc', contrast: 'Kontrast', sharpness: 'Ostrosc', gamma: 'Gamma',
-          transform: 'Transformacje', invert: 'Odwroc kolory', reset: 'Resetuj', saveChanges: 'Zapisz',
-          rotation: 'Interwal rotacji zdjec',
-          saved: 'Zapisano', deleted: 'Usunieto', uploaded: 'Zdjecie dodane', error: 'Wystapil blad',
-          deviceLinked: 'Urzadzenie polaczone', photos: 'zdjec', processing: 'Przetwarzanie...',
-          pendingChanges: 'Niezapisane zmiany - wyswietlacz zaktualizuje sie po zapisaniu',
-          discard: 'Odrzuc', saveAndUpdate: 'Zapisz i zaktualizuj wyswietlacz',
-          displayUpdated: 'Wyswietlacz zaktualizowany!', updating: 'Aktualizowanie wyswietlacza...',
-          notConfigured: 'Nie skonfigurowano', connecting: 'Laczenie...',
+          brightness: 'Jasność', contrast: 'Kontrast', sharpness: 'Ostrość', gamma: 'Gamma',
+          transform: 'Transformacje', invert: 'Odwróć kolory', reset: 'Resetuj', saveChanges: 'Zapisz',
+          rotation: 'Interwał rotacji zdjęć',
+          saved: 'Zapisano', deleted: 'Usunięto', uploaded: 'Zdjęcie dodane', error: 'Wystąpił błąd',
+          deviceLinked: 'Urządzenie połączone', photos: 'zdjęć', processing: 'Przetwarzanie...',
+          pendingChanges: 'Niezapisane zmiany - wyświetlacz zaktualizuje się po zapisaniu',
+          discard: 'Odrzuć', saveAndUpdate: 'Zapisz i zaktualizuj wyświetlacz',
+          displayUpdated: 'Wyświetlacz zaktualizowany!', updating: 'Aktualizowanie wyświetlacza...',
+          notConfigured: 'Nie skonfigurowano', connecting: 'Łączenie...',
           calendarNotConfigured: 'Kalendarz Google nie jest skonfigurowany na serwerze',
-          calendarDisconnected: 'Kalendarz odlaczony'
+          calendarDisconnected: 'Kalendarz odłączony',
+          crop: 'Kadrowanie', cropX: 'Przesunięcie poziome', cropY: 'Przesunięcie pionowe', cropZoom: 'Powiększenie',
+          textOverlay: 'Tekst na zdjęciu', textPosition: 'Pozycja', textSize: 'Rozmiar',
+          top: 'Góra', center: 'Środek', bottom: 'Dół',
+          small: 'Mały', medium: 'Średni', large: 'Duży',
+          autoImageMode: 'Automatyczne zdjęcia', autoImageModeHint: 'Po braku aktywności',
+          disabled: 'Wyłączone'
         }
       },
       de: {
@@ -1303,7 +1391,13 @@
           displayUpdated: 'Display aktualisiert!', updating: 'Display wird aktualisiert...',
           notConfigured: 'Nicht konfiguriert', connecting: 'Verbinden...',
           calendarNotConfigured: 'Google Kalender nicht auf dem Server konfiguriert',
-          calendarDisconnected: 'Kalender getrennt'
+          calendarDisconnected: 'Kalender getrennt',
+          crop: 'Zuschneiden', cropX: 'Horizontaler Versatz', cropY: 'Vertikaler Versatz', cropZoom: 'Zoom',
+          textOverlay: 'Textüberlagerung', textPosition: 'Position', textSize: 'Größe',
+          top: 'Oben', center: 'Mitte', bottom: 'Unten',
+          small: 'Klein', medium: 'Mittel', large: 'Groß',
+          autoImageMode: 'Auto-Fotomodus', autoImageModeHint: 'Nach Inaktivität',
+          disabled: 'Deaktiviert'
         }
       },
       fr: {
@@ -1327,9 +1421,15 @@
           pendingChanges: 'Modifications non enregistrees - l\'ecran se mettra a jour apres enregistrement',
           discard: 'Annuler', saveAndUpdate: 'Enregistrer & mettre a jour',
           displayUpdated: 'Ecran mis a jour!', updating: 'Mise a jour de l\'ecran...',
-          notConfigured: 'Non configure', connecting: 'Connexion...',
-          calendarNotConfigured: 'Google Agenda non configure sur le serveur',
-          calendarDisconnected: 'Agenda deconnecte'
+          notConfigured: 'Non configuré', connecting: 'Connexion...',
+          calendarNotConfigured: 'Google Agenda non configuré sur le serveur',
+          calendarDisconnected: 'Agenda déconnecté',
+          crop: 'Recadrer', cropX: 'Décalage horizontal', cropY: 'Décalage vertical', cropZoom: 'Zoom',
+          textOverlay: 'Texte superposé', textPosition: 'Position', textSize: 'Taille',
+          top: 'Haut', center: 'Centre', bottom: 'Bas',
+          small: 'Petit', medium: 'Moyen', large: 'Grand',
+          autoImageMode: 'Mode photo auto', autoImageModeHint: 'Après inactivité',
+          disabled: 'Désactivé'
         }
       },
       es: {
@@ -1355,7 +1455,13 @@
           displayUpdated: 'Pantalla actualizada!', updating: 'Actualizando pantalla...',
           notConfigured: 'No configurado', connecting: 'Conectando...',
           calendarNotConfigured: 'Google Calendar no configurado en el servidor',
-          calendarDisconnected: 'Calendario desconectado'
+          calendarDisconnected: 'Calendario desconectado',
+          crop: 'Recortar', cropX: 'Desplazamiento horizontal', cropY: 'Desplazamiento vertical', cropZoom: 'Zoom',
+          textOverlay: 'Texto superpuesto', textPosition: 'Posición', textSize: 'Tamaño',
+          top: 'Arriba', center: 'Centro', bottom: 'Abajo',
+          small: 'Pequeño', medium: 'Mediano', large: 'Grande',
+          autoImageMode: 'Modo foto auto', autoImageModeHint: 'Después de inactividad',
+          disabled: 'Desactivado'
         }
       }
     };
@@ -1469,9 +1575,10 @@
       const res = await api('/settings');
       if (!res) return;
       const data = await res.json();
-      settings = data.settings || { city: 'Warsaw', rotationInterval: 60, lang: 'pl' };
+      settings = data.settings || { city: 'Warsaw', rotationInterval: 60, lang: 'pl', autoImageMode: 0 };
       document.getElementById('cityInput').value = settings.city || '';
       document.getElementById('rotationInterval').value = settings.rotationInterval || 60;
+      document.getElementById('autoImageMode').value = settings.autoImageMode || 0;
       // Store original for discard functionality
       originalSettings = { ...settings };
     }
@@ -1748,7 +1855,14 @@
         rotation: 0,
         flipH: false,
         flipV: false,
-        invert: false
+        invert: false,
+        cropX: 0,
+        cropY: 0,
+        cropW: 1,
+        cropH: 1,
+        textOverlay: '',
+        textPosition: 'bottom',
+        textSize: 'medium'
       };
       updateEditorUI();
     }
@@ -1761,10 +1875,40 @@
       document.getElementById('ditheringSelect').value = editorSettings.dithering;
       document.getElementById('invertToggle').classList.toggle('active', editorSettings.invert);
 
+      // Crop controls
+      document.getElementById('cropXSlider').value = editorSettings.cropX * 100;
+      document.getElementById('cropYSlider').value = editorSettings.cropY * 100;
+      document.getElementById('cropZoomSlider').value = editorSettings.cropW * 100;
+      document.getElementById('cropXValue').textContent = Math.round(editorSettings.cropX * 100) + '%';
+      document.getElementById('cropYValue').textContent = Math.round(editorSettings.cropY * 100) + '%';
+      document.getElementById('cropZoomValue').textContent = Math.round(editorSettings.cropW * 100) + '%';
+
+      // Text overlay controls
+      document.getElementById('textOverlayInput').value = editorSettings.textOverlay || '';
+      document.getElementById('textPositionSelect').value = editorSettings.textPosition || 'bottom';
+      document.getElementById('textSizeSelect').value = editorSettings.textSize || 'medium';
+
       updateSliderValue('brightness');
       updateSliderValue('contrast');
       updateSliderValue('sharpness');
       updateSliderValue('gamma');
+    }
+
+    function updateCrop(type) {
+      if (type === 'cropX') {
+        const val = parseInt(document.getElementById('cropXSlider').value) / 100;
+        editorSettings.cropX = val;
+        document.getElementById('cropXValue').textContent = Math.round(val * 100) + '%';
+      } else if (type === 'cropY') {
+        const val = parseInt(document.getElementById('cropYSlider').value) / 100;
+        editorSettings.cropY = val;
+        document.getElementById('cropYValue').textContent = Math.round(val * 100) + '%';
+      } else if (type === 'cropZoom') {
+        const val = parseInt(document.getElementById('cropZoomSlider').value) / 100;
+        editorSettings.cropW = val;
+        editorSettings.cropH = val;
+        document.getElementById('cropZoomValue').textContent = Math.round(val * 100) + '%';
+      }
     }
 
     function updateSliderValue(name) {
@@ -1819,7 +1963,11 @@
         const frame = document.getElementById('previewFrame');
         frame.innerHTML = '<div class="spinner"></div>';
 
+        // Get all current settings from UI
         editorSettings.dithering = document.getElementById('ditheringSelect').value;
+        editorSettings.textOverlay = document.getElementById('textOverlayInput').value;
+        editorSettings.textPosition = document.getElementById('textPositionSelect').value;
+        editorSettings.textSize = document.getElementById('textSizeSelect').value;
 
         try {
           const res = await api('/images/preview', {
@@ -1908,15 +2056,23 @@
         if (pendingChanges.settings) {
           const city = document.getElementById('cityInput').value.trim();
           const rotationInterval = parseInt(document.getElementById('rotationInterval').value);
+          const autoImageMode = parseInt(document.getElementById('autoImageMode').value);
           await api('/settings', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ city, rotationInterval, lang: currentLang })
+            body: JSON.stringify({ city, rotationInterval, lang: currentLang, autoImageMode })
           });
+          originalSettings = { city, rotationInterval, lang: currentLang, autoImageMode };
         }
 
         // Save edited image if in editor mode
         if (pendingChanges.editor && editingImage) {
+          // Get all current settings from UI
+          editorSettings.textOverlay = document.getElementById('textOverlayInput').value;
+          editorSettings.textPosition = document.getElementById('textPositionSelect').value;
+          editorSettings.textSize = document.getElementById('textSizeSelect').value;
+          editorSettings.dithering = document.getElementById('ditheringSelect').value;
+
           await api('/images/process', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1927,9 +2083,13 @@
           });
         }
 
-        // Trigger device display refresh
+        // Trigger device display refresh - this tells ESP32 to fetch new content
         if (currentDevice) {
-          await api(`/devices/${currentDevice.id}/refresh`, { method: 'POST' });
+          const refreshRes = await api(`/devices/${currentDevice.id}/refresh`, { method: 'POST' });
+          if (refreshRes && refreshRes.ok) {
+            const data = await refreshRes.json();
+            console.log('Device refresh triggered, version:', data.refreshVersion);
+          }
         }
 
         // Clear all pending flags

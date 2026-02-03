@@ -710,21 +710,21 @@
             <div class="device-header">
               <span class="device-date">03</span>
               <div class="device-info">
-                <div>PON</div>
-                <div>LUT 2026</div>
+                <div id="mockupDay">MON</div>
+                <div id="mockupMonth">FEB 2026</div>
               </div>
             </div>
             <div class="device-content">
               <div class="device-section">
-                <div class="device-section-title">WYDARZENIA</div>
-                <div class="device-item">09:00 Spotkanie zespolu</div>
-                <div class="device-item">14:30 Prezentacja projektu</div>
+                <div class="device-section-title" id="mockupEventsTitle">EVENTS</div>
+                <div class="device-item" id="mockupEvent1">09:00 Team meeting</div>
+                <div class="device-item" id="mockupEvent2">14:30 Project presentation</div>
               </div>
               <div class="device-section">
-                <div class="device-section-title">ZADANIA</div>
-                <div class="device-item"><div class="device-checkbox"></div> Wyslac raport</div>
-                <div class="device-item"><div class="device-checkbox"></div> Zamowic ksiazki</div>
-                <div class="device-item"><div class="device-checkbox"></div> Zadzwonic do klienta</div>
+                <div class="device-section-title" id="mockupTasksTitle">TASKS</div>
+                <div class="device-item"><div class="device-checkbox"></div> <span id="mockupTask1">Send report</span></div>
+                <div class="device-item"><div class="device-checkbox"></div> <span id="mockupTask2">Order books</span></div>
+                <div class="device-item"><div class="device-checkbox"></div> <span id="mockupTask3">Call client</span></div>
               </div>
             </div>
           </div>
@@ -922,26 +922,28 @@
           step3: { title: 'Customize', desc: 'Upload photos, connect your calendar, and personalize your dashboard.' }
         },
         cta: { title: 'Ready to Get Started?', subtitle: 'Create your free account and start customizing your InkFrame today.', button: 'Create Account' },
-        auth: { name: 'Name', email: 'Email', password: 'Password', login: 'Log in', register: 'Sign up', noAccount: "Don't have an account?", hasAccount: 'Already have an account?', signUp: 'Sign up', signIn: 'Log in' }
+        auth: { name: 'Name', email: 'Email', password: 'Password', login: 'Log in', register: 'Sign up', noAccount: "Don't have an account?", hasAccount: 'Already have an account?', signUp: 'Sign up', signIn: 'Log in' },
+        mockup: { day: 'MON', month: 'FEB 2026', events: 'EVENTS', tasks: 'TASKS', event1: '09:00 Team meeting', event2: '14:30 Project presentation', task1: 'Send report', task2: 'Order books', task3: 'Call client' }
       },
       pl: {
-        nav: { features: 'Funkcje', howItWorks: 'Jak to dziala', login: 'Zaloguj', register: 'Rejestracja' },
-        hero: { title: 'Elegancki wyswietlacz E-ink dla Twojej przestrzeni', subtitle: 'Pogoda, kalendarz, zadania i Twoje zdjecia - wszystko na pieknym, energooszczednym wyswietlaczu wyglajacym jak papier.', cta: 'Rozpocznij', learn: 'Dowiedz sie wiecej' },
-        features: { title: 'Wszystko czego potrzebujesz', subtitle: 'Inteligentny wyswietlacz, ktory informuje bez rozpraszania.',
-          photos: { title: 'Galeria zdjec', desc: 'Wyswietlaj ulubione zdjecia z profesjonalnymi algorytmami ditheringu zoptymalizowanymi dla E-ink.' },
-          weather: { title: 'Pogoda na zywo', desc: 'Aktualna temperatura i warunki pogodowe aktualizowane automatycznie dla Twojej lokalizacji.' },
-          calendar: { title: 'Kalendarz Google', desc: 'Zobacz nadchodzace wydarzenia dzieki integracji z Kalendarzem Google.' },
-          todos: { title: 'Listy zadan', desc: 'Sledz swoje zadania dzieki przejrzystej liscie kontrolnej.' },
-          eink: { title: 'Wyswietlacz E-ink', desc: 'Wyswietlacz przypominajacy papier, przyjazny dla oczu i zuzywa minimalna ilosc energii.' },
-          carousel: { title: 'Karuzela zdjec', desc: 'Automatycznie przewijaj zdjecia w ustawionych odstepach czasu.' }
+        nav: { features: 'Funkcje', howItWorks: 'Jak to działa', login: 'Zaloguj', register: 'Rejestracja' },
+        hero: { title: 'Elegancki wyświetlacz E-ink dla Twojej przestrzeni', subtitle: 'Pogoda, kalendarz, zadania i Twoje zdjęcia - wszystko na pięknym, energooszczędnym wyświetlaczu wyglądającym jak papier.', cta: 'Rozpocznij', learn: 'Dowiedz się więcej' },
+        features: { title: 'Wszystko czego potrzebujesz', subtitle: 'Inteligentny wyświetlacz, który informuje bez rozpraszania.',
+          photos: { title: 'Galeria zdjęć', desc: 'Wyświetlaj ulubione zdjęcia z profesjonalnymi algorytmami ditheringu zoptymalizowanymi dla E-ink.' },
+          weather: { title: 'Pogoda na żywo', desc: 'Aktualna temperatura i warunki pogodowe aktualizowane automatycznie dla Twojej lokalizacji.' },
+          calendar: { title: 'Kalendarz Google', desc: 'Zobacz nadchodzące wydarzenia dzięki integracji z Kalendarzem Google.' },
+          todos: { title: 'Listy zadań', desc: 'Śledź swoje zadania dzięki przejrzystej liście kontrolnej.' },
+          eink: { title: 'Wyświetlacz E-ink', desc: 'Wyświetlacz przypominający papier, przyjazny dla oczu i zużywa minimalną ilość energii.' },
+          carousel: { title: 'Karuzela zdjęć', desc: 'Automatycznie przewijaj zdjęcia w ustawionych odstępach czasu.' }
         },
-        steps: { title: 'Jak to dziala', subtitle: 'Zacznij w kilka minut dzieki prostemu procesowi konfiguracji.',
-          step1: { title: 'Polacz urzadzenie', desc: 'Wlacz InkFrame i polacz z WiFi za pomoca kreatora konfiguracji.' },
-          step2: { title: 'Utworz konto', desc: 'Zarejestruj sie i polacz urzadzenie uzywajac ID wyswietlonego na ekranie.' },
-          step3: { title: 'Dostosuj', desc: 'Dodaj zdjecia, polacz kalendarz i spersonalizuj dashboard.' }
+        steps: { title: 'Jak to działa', subtitle: 'Zacznij w kilka minut dzięki prostemu procesowi konfiguracji.',
+          step1: { title: 'Połącz urządzenie', desc: 'Włącz InkFrame i połącz z WiFi za pomocą kreatora konfiguracji.' },
+          step2: { title: 'Utwórz konto', desc: 'Zarejestruj się i połącz urządzenie używając ID wyświetlonego na ekranie.' },
+          step3: { title: 'Dostosuj', desc: 'Dodaj zdjęcia, połącz kalendarz i spersonalizuj dashboard.' }
         },
-        cta: { title: 'Gotowy do rozpoczecia?', subtitle: 'Utworz darmowe konto i zacznij dostosowywac swoj InkFrame juz dzis.', button: 'Utworz konto' },
-        auth: { name: 'Imie', email: 'Email', password: 'Haslo', login: 'Zaloguj', register: 'Zarejestruj', noAccount: 'Nie masz konta?', hasAccount: 'Masz juz konto?', signUp: 'Zarejestruj sie', signIn: 'Zaloguj sie' }
+        cta: { title: 'Gotowy do rozpoczęcia?', subtitle: 'Utwórz darmowe konto i zacznij dostosowywać swój InkFrame już dziś.', button: 'Utwórz konto' },
+        auth: { name: 'Imię', email: 'Email', password: 'Hasło', login: 'Zaloguj', register: 'Zarejestruj', noAccount: 'Nie masz konta?', hasAccount: 'Masz już konto?', signUp: 'Zarejestruj się', signIn: 'Zaloguj się' },
+        mockup: { day: 'PON', month: 'LUT 2026', events: 'WYDARZENIA', tasks: 'ZADANIA', event1: '09:00 Spotkanie zespołu', event2: '14:30 Prezentacja projektu', task1: 'Wysłać raport', task2: 'Zamówić książki', task3: 'Zadzwonić do klienta' }
       },
       de: {
         nav: { features: 'Funktionen', howItWorks: 'So funktioniert es', login: 'Anmelden', register: 'Registrieren' },
@@ -960,7 +962,8 @@
           step3: { title: 'Anpassen', desc: 'Fotos hochladen, Kalender verbinden und personalisieren.' }
         },
         cta: { title: 'Bereit loszulegen?', subtitle: 'Erstellen Sie Ihr kostenloses Konto und personalisieren Sie Ihr InkFrame.', button: 'Konto erstellen' },
-        auth: { name: 'Name', email: 'E-Mail', password: 'Passwort', login: 'Anmelden', register: 'Registrieren', noAccount: 'Kein Konto?', hasAccount: 'Bereits registriert?', signUp: 'Registrieren', signIn: 'Anmelden' }
+        auth: { name: 'Name', email: 'E-Mail', password: 'Passwort', login: 'Anmelden', register: 'Registrieren', noAccount: 'Kein Konto?', hasAccount: 'Bereits registriert?', signUp: 'Registrieren', signIn: 'Anmelden' },
+        mockup: { day: 'MO', month: 'FEB 2026', events: 'TERMINE', tasks: 'AUFGABEN', event1: '09:00 Teambesprechung', event2: '14:30 Projektpräsentation', task1: 'Bericht senden', task2: 'Bücher bestellen', task3: 'Kunden anrufen' }
       },
       fr: {
         nav: { features: 'Fonctionnalites', howItWorks: 'Comment ca marche', login: 'Connexion', register: 'Inscription' },
@@ -978,8 +981,9 @@
           step2: { title: 'Creez un compte', desc: 'Inscrivez-vous et liez votre appareil avec ID affiche.' },
           step3: { title: 'Personnalisez', desc: 'Ajoutez des photos, connectez votre calendrier et personnalisez.' }
         },
-        cta: { title: 'Pret a commencer?', subtitle: 'Creez votre compte gratuit et personnalisez votre InkFrame.', button: 'Creer un compte' },
-        auth: { name: 'Nom', email: 'Email', password: 'Mot de passe', login: 'Connexion', register: 'Inscription', noAccount: 'Pas de compte?', hasAccount: 'Deja inscrit?', signUp: 'Inscription', signIn: 'Connexion' }
+        cta: { title: 'Prêt à commencer?', subtitle: 'Créez votre compte gratuit et personnalisez votre InkFrame.', button: 'Créer un compte' },
+        auth: { name: 'Nom', email: 'Email', password: 'Mot de passe', login: 'Connexion', register: 'Inscription', noAccount: 'Pas de compte?', hasAccount: 'Déjà inscrit?', signUp: 'Inscription', signIn: 'Connexion' },
+        mockup: { day: 'LUN', month: 'FÉV 2026', events: 'ÉVÉNEMENTS', tasks: 'TÂCHES', event1: '09:00 Réunion d\'équipe', event2: '14:30 Présentation projet', task1: 'Envoyer rapport', task2: 'Commander livres', task3: 'Appeler client' }
       },
       es: {
         nav: { features: 'Caracteristicas', howItWorks: 'Como funciona', login: 'Iniciar sesion', register: 'Registrarse' },
@@ -997,8 +1001,9 @@
           step2: { title: 'Crea una cuenta', desc: 'Registrate y vincula tu dispositivo con el ID mostrado.' },
           step3: { title: 'Personaliza', desc: 'Sube fotos, conecta tu calendario y personaliza.' }
         },
-        cta: { title: 'Listo para comenzar?', subtitle: 'Crea tu cuenta gratis y personaliza tu InkFrame hoy.', button: 'Crear cuenta' },
-        auth: { name: 'Nombre', email: 'Email', password: 'Contrasena', login: 'Iniciar sesion', register: 'Registrarse', noAccount: 'No tienes cuenta?', hasAccount: 'Ya tienes cuenta?', signUp: 'Registrarse', signIn: 'Iniciar sesion' }
+        cta: { title: '¿Listo para comenzar?', subtitle: 'Crea tu cuenta gratis y personaliza tu InkFrame hoy.', button: 'Crear cuenta' },
+        auth: { name: 'Nombre', email: 'Email', password: 'Contraseña', login: 'Iniciar sesión', register: 'Registrarse', noAccount: '¿No tienes cuenta?', hasAccount: '¿Ya tienes cuenta?', signUp: 'Registrarse', signIn: 'Iniciar sesión' },
+        mockup: { day: 'LUN', month: 'FEB 2026', events: 'EVENTOS', tasks: 'TAREAS', event1: '09:00 Reunión de equipo', event2: '14:30 Presentación proyecto', task1: 'Enviar informe', task2: 'Pedir libros', task3: 'Llamar cliente' }
       }
     };
 
@@ -1027,6 +1032,20 @@
         const text = t(el.getAttribute('data-i18n'));
         if (text && text !== el.getAttribute('data-i18n')) el.textContent = text;
       });
+
+      // Update device mockup
+      const mockup = translations[currentLang]?.mockup;
+      if (mockup) {
+        document.getElementById('mockupDay').textContent = mockup.day;
+        document.getElementById('mockupMonth').textContent = mockup.month;
+        document.getElementById('mockupEventsTitle').textContent = mockup.events;
+        document.getElementById('mockupTasksTitle').textContent = mockup.tasks;
+        document.getElementById('mockupEvent1').textContent = mockup.event1;
+        document.getElementById('mockupEvent2').textContent = mockup.event2;
+        document.getElementById('mockupTask1').textContent = mockup.task1;
+        document.getElementById('mockupTask2').textContent = mockup.task2;
+        document.getElementById('mockupTask3').textContent = mockup.task3;
+      }
     }
 
     // Modal
