@@ -64,7 +64,7 @@ GxEPD2_154_GDEY0154D67(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
 // For local development, use your computer's IP:
 // #define API_SERVER "http://192.168.1.100:3000"
 // For production, use your domain:
-#define API_SERVER "https://eink-luvia.com"
+#define API_SERVER "https://www.eink-luvia.com"
 #define DISPLAY_WIDTH 200
 #define DISPLAY_HEIGHT 200
 
@@ -263,17 +263,43 @@ void setupSecureClient() {
 // REGISTER DEVICE
 // ============================================================
 void registerDevice() {
-  Serial.println("Registering device with server...");
-
-  HTTPClient http;
-  String url = String(API_SERVER) + "/api/devices/register";
-
-  // Use secure client for HTTPS
-  http.begin(secureClient, url);
-  http.addHeader("Content-Type", "application/json");
-  http.setTimeout(10000);  // 10 second timeout
+  Serial.println("\n--- REGISTERING DEVICE ---");
 
   String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
+  Serial.printf("Device ID: %s\n", deviceId.c_str());
+  Serial.printf("Server: %s\n", API_SERVER);
+
+  // Test basic connectivity first
+  Serial.println("Testing HTTPS connection...");
+
+  HTTPClient http;
+  String testUrl = String(API_SERVER) + "/api/health";
+
+  http.begin(secureClient, testUrl);
+  http.setTimeout(15000);
+
+  int testCode = http.GET();
+  if (testCode == 200) {
+    Serial.println("Server reachable! Health check OK.");
+    Serial.println(http.getString());
+  } else if (testCode < 0) {
+    Serial.printf("HTTPS FAILED: %s\n", http.errorToString(testCode).c_str());
+    Serial.println("Check: 1) WiFi connected 2) DNS working 3) Server online");
+    http.end();
+    return;
+  } else {
+    Serial.printf("Health check returned: %d\n", testCode);
+  }
+  http.end();
+
+  // Now register
+  Serial.println("\nSending registration...");
+  String url = String(API_SERVER) + "/api/devices/register";
+
+  http.begin(secureClient, url);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(15000);
+
   JsonDocument doc;
   doc["deviceId"] = deviceId;
   doc["displayType"] = "154_BW";
@@ -281,25 +307,22 @@ void registerDevice() {
 
   String payload;
   serializeJson(doc, payload);
-
-  Serial.printf("Registering device ID: %s\n", deviceId.c_str());
-  Serial.printf("URL: %s\n", url.c_str());
+  Serial.printf("Payload: %s\n", payload.c_str());
 
   int httpCode = http.POST(payload);
 
   if (httpCode == 200 || httpCode == 201) {
-    Serial.println("Device registered successfully!");
-    String response = http.getString();
-    Serial.println(response);
+    Serial.println("SUCCESS! Device registered.");
+    Serial.println(http.getString());
   } else if (httpCode < 0) {
-    Serial.printf("Connection failed: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("CONNECTION ERROR: %s\n", http.errorToString(httpCode).c_str());
   } else {
-    Serial.printf("Registration failed with HTTP code: %d\n", httpCode);
-    String response = http.getString();
-    Serial.println(response);
+    Serial.printf("SERVER ERROR: HTTP %d\n", httpCode);
+    Serial.println(http.getString());
   }
 
   http.end();
+  Serial.println("--- REGISTRATION COMPLETE ---\n");
 }
 
 // ============================================================

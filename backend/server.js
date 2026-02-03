@@ -19,6 +19,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
+const db = require('./database');
 
 // ==================== CONFIGURATION ====================
 
@@ -106,71 +107,7 @@ app.get('/app', (req, res) => {
 });
 
 // ==================== DATA STORAGE ====================
-
-class DataStore {
-  constructor(filename) {
-    this.filepath = path.join(DATA_DIR, filename);
-  }
-
-  async load() {
-    try {
-      const data = await fs.readFile(this.filepath, 'utf8');
-      return JSON.parse(data);
-    } catch (error) {
-      if (error.code === 'ENOENT') return [];
-      throw error;
-    }
-  }
-
-  async save(data) {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(this.filepath, JSON.stringify(data, null, 2));
-  }
-
-  async findById(id) {
-    const data = await this.load();
-    return data.find(item => item.id === id);
-  }
-
-  async findOne(predicate) {
-    const data = await this.load();
-    return data.find(predicate);
-  }
-
-  async findAll(predicate = () => true) {
-    const data = await this.load();
-    return data.filter(predicate);
-  }
-
-  async create(item) {
-    const data = await this.load();
-    const newItem = { ...item, id: item.id || uuidv4(), createdAt: new Date().toISOString() };
-    data.push(newItem);
-    await this.save(data);
-    return newItem;
-  }
-
-  async update(id, updates) {
-    const data = await this.load();
-    const index = data.findIndex(item => item.id === id);
-    if (index === -1) return null;
-    data[index] = { ...data[index], ...updates, updatedAt: new Date().toISOString() };
-    await this.save(data);
-    return data[index];
-  }
-
-  async delete(id) {
-    const data = await this.load();
-    const filtered = data.filter(item => item.id !== id);
-    if (filtered.length === data.length) return false;
-    await this.save(filtered);
-    return true;
-  }
-}
-
-const users = new DataStore('users.json');
-const devices = new DataStore('devices.json');
-const images = new DataStore('images.json');
+// Using database module (PostgreSQL in production, JSON files locally)
 
 // ==================== AUTHENTICATION ====================
 
@@ -182,7 +119,7 @@ const authenticate = async (req, res, next) => {
     }
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, config.jwtSecret);
-    const user = await users.findById(decoded.userId);
+    const user = await db.getUserById(decoded.userId);
     if (!user) return res.status(401).json({ error: 'User not found' });
     req.user = user;
     next();
@@ -199,7 +136,7 @@ const optionalAuth = async (req, res, next) => {
   try {
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, config.jwtSecret);
-    const user = await users.findById(decoded.userId);
+    const user = await db.getUserById(decoded.userId);
     if (user) req.user = user;
   } catch (error) { /* ignore */ }
   next();
@@ -224,16 +161,16 @@ app.post('/api/auth/register', async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    const existing = await users.findOne(u => u.email === email);
+    const existing = await db.getUserByEmail(email);
     if (existing) {
       return res.status(409).json({ error: 'Email already registered' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await users.create({
+    const user = await db.createUser({
+      id: uuidv4(),
       email,
       password: hashedPassword,
-      name: name || email.split('@')[0],
-      role: 'user'
+      name: name || email.split('@')[0]
     });
     const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
     res.status(201).json({
@@ -251,7 +188,7 @@ app.post('/api/auth/login', async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    const user = await users.findOne(u => u.email === email);
+    const user = await db.getUserByEmail(email);
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
@@ -281,28 +218,24 @@ app.post('/api/devices/register', async (req, res, next) => {
 
     console.log(`Device registration request: ${deviceId}`);
 
-    let device = await devices.findOne(d => d.deviceId === deviceId);
+    let device = await db.getDeviceById(deviceId);
     if (device) {
-      device = await devices.update(device.id, {
-        displayType: displayType || device.displayType,
-        firmwareVersion: firmwareVersion || device.firmwareVersion,
+      await db.updateDevice(deviceId, {
         lastSeen: new Date().toISOString()
       });
       console.log(`Device updated: ${deviceId}`);
     } else {
-      device = await devices.create({
-        deviceId,
-        displayType: displayType || '154_BW',
-        firmwareVersion: firmwareVersion || '1.0.0',
-        settings: { mode: 'image', rotateMinutes: 60 },
-        lastSeen: new Date().toISOString()
+      device = await db.createDevice({
+        id: deviceId,
+        name: 'My InkFrame',
+        brightness: 100
       });
       console.log(`New device registered: ${deviceId}`);
     }
 
-    const apiKey = jwt.sign({ deviceId: device.deviceId }, config.jwtSecret);
+    const apiKey = jwt.sign({ deviceId }, config.jwtSecret);
     res.status(201).json({
-      device: { id: device.id, deviceId: device.deviceId, displayType: device.displayType },
+      device: { id: deviceId, deviceId, displayType: displayType || '154_BW' },
       apiKey
     });
   } catch (error) {
@@ -315,11 +248,11 @@ app.post('/api/devices/:deviceId/link', authenticate, async (req, res, next) => 
     const { deviceId } = req.params;
     console.log(`Link request for device: ${deviceId} by user: ${req.user.id}`);
 
-    const device = await devices.findOne(d => d.deviceId === deviceId);
+    const device = await db.getDeviceById(deviceId);
     if (!device) {
       // List all devices for debugging
-      const allDevices = await devices.findAll();
-      console.log(`Available devices: ${allDevices.map(d => d.deviceId).join(', ') || 'none'}`);
+      const allDevices = await db.getDevices();
+      console.log(`Available devices: ${Object.keys(allDevices).join(', ') || 'none'}`);
       return res.status(404).json({
         error: 'Device not found. Make sure your InkFrame is powered on, connected to WiFi, and showing its Device ID on the dashboard screen. The device must connect to the server at least once before you can link it.'
       });
@@ -329,7 +262,7 @@ app.post('/api/devices/:deviceId/link', authenticate, async (req, res, next) => 
       return res.status(403).json({ error: 'Device is already linked to another account' });
     }
 
-    await devices.update(device.id, { userId: req.user.id });
+    await db.updateDevice(deviceId, { userId: req.user.id });
     console.log(`Device ${deviceId} linked to user ${req.user.id}`);
     res.json({ message: 'Device linked successfully' });
   } catch (error) {
@@ -339,7 +272,7 @@ app.post('/api/devices/:deviceId/link', authenticate, async (req, res, next) => 
 
 app.get('/api/devices', authenticate, async (req, res, next) => {
   try {
-    const userDevices = await devices.findAll(d => d.userId === req.user.id);
+    const userDevices = await db.getDevicesByUserId(req.user.id);
     res.json({ devices: userDevices });
   } catch (error) {
     next(error);
@@ -348,15 +281,16 @@ app.get('/api/devices', authenticate, async (req, res, next) => {
 
 // Debug endpoint - list all registered devices
 app.get('/api/debug/devices', async (req, res) => {
-  const allDevices = await devices.findAll();
+  const allDevices = await db.getDevices();
+  const deviceList = Object.values(allDevices);
   res.json({
-    count: allDevices.length,
-    devices: allDevices.map(d => ({
-      deviceId: d.deviceId,
-      displayType: d.displayType,
+    count: deviceList.length,
+    devices: deviceList.map(d => ({
+      deviceId: d.id,
       userId: d.userId || 'NOT LINKED',
       lastSeen: d.lastSeen
-    }))
+    })),
+    storage: db.isUsingPostgres() ? 'PostgreSQL' : 'JSON files'
   });
 });
 
@@ -412,16 +346,11 @@ app.post('/api/images/upload', authenticate, upload.single('image'), async (req,
 
     console.log(`Image saved to: ${filepath}`);
 
-    const image = await images.create({
+    const image = await db.createImage({
+      id: uuidv4(),
       userId: req.user.id,
       filename,
-      title: title || 'Untitled',
-      originalName: req.file.originalname,
-      mimeType: 'image/png',
-      width: targetWidth,
-      height: targetHeight,
-      deviceId: deviceId || null,
-      adjustments
+      originalName: req.file.originalname
     });
 
     res.status(201).json({
@@ -441,16 +370,14 @@ app.post('/api/images/upload', authenticate, upload.single('image'), async (req,
 
 app.get('/api/images', authenticate, async (req, res, next) => {
   try {
-    const userImages = await images.findAll(i => i.userId === req.user.id);
+    const userImages = await db.getImagesByUserId(req.user.id);
     console.log(`User ${req.user.id} has ${userImages.length} images`);
     res.json({
       images: userImages.map(i => ({
         id: i.id,
         url: `/uploads/${i.filename}`,
-        title: i.title,
-        width: i.width,
-        height: i.height,
-        createdAt: i.createdAt
+        title: i.originalName || 'Untitled',
+        createdAt: i.uploadedAt
       }))
     });
   } catch (error) {
@@ -461,7 +388,7 @@ app.get('/api/images', authenticate, async (req, res, next) => {
 app.delete('/api/images/:id', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const image = await images.findById(id);
+    const image = await db.getImageById(id);
     if (!image) return res.status(404).json({ error: 'Image not found' });
     if (image.userId !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
 
@@ -471,7 +398,7 @@ app.delete('/api/images/:id', authenticate, async (req, res, next) => {
       console.error('Failed to delete file:', e);
     }
 
-    await images.delete(id);
+    await db.deleteImage(id);
     res.json({ message: 'Image deleted' });
   } catch (error) {
     next(error);
@@ -484,14 +411,14 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
     const { deviceId } = req.params;
     const { index = 0 } = req.query;
 
-    const device = await devices.findOne(d => d.deviceId === deviceId);
+    const device = await db.getDeviceById(deviceId);
     if (!device) return res.status(404).json({ error: 'Device not found' });
 
-    await devices.update(device.id, { lastSeen: new Date().toISOString() });
+    await db.updateDevice(deviceId, { lastSeen: new Date().toISOString() });
 
     if (!device.userId) return res.status(404).json({ error: 'Device not linked to account' });
 
-    const userImages = await images.findAll(i => i.userId === device.userId);
+    const userImages = await db.getImagesByUserId(device.userId);
     if (userImages.length === 0) return res.status(404).json({ error: 'No images available' });
 
     const imageIndex = parseInt(index) % userImages.length;
@@ -504,7 +431,7 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
       return res.status(404).json({ error: 'Image file not found' });
     }
 
-    const displayConfig = DISPLAY_CONFIGS[device.displayType] || DISPLAY_CONFIGS['default'];
+    const displayConfig = DISPLAY_CONFIGS['default'];
 
     const { data } = await sharp(imagePath)
       .resize(displayConfig.width, displayConfig.height, { fit: 'cover' })
@@ -539,16 +466,15 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
 app.get('/api/device/:deviceId/image-info', optionalAuth, async (req, res, next) => {
   try {
     const { deviceId } = req.params;
-    const device = await devices.findOne(d => d.deviceId === deviceId);
+    const device = await db.getDeviceById(deviceId);
     if (!device || !device.userId) return res.json({ total: 0, currentIndex: 0 });
 
-    const userImages = await images.findAll(i => i.userId === device.userId);
-    const currentIndex = device.currentImageIndex || 0;
+    const userImages = await db.getImagesByUserId(device.userId);
 
     res.json({
       total: userImages.length,
-      currentIndex: currentIndex % Math.max(1, userImages.length),
-      rotateMinutes: device.settings?.rotateMinutes || 60
+      currentIndex: 0,
+      rotateMinutes: 60
     });
   } catch (error) {
     next(error);
@@ -558,15 +484,12 @@ app.get('/api/device/:deviceId/image-info', optionalAuth, async (req, res, next)
 app.post('/api/device/:deviceId/next-image', optionalAuth, async (req, res, next) => {
   try {
     const { deviceId } = req.params;
-    const device = await devices.findOne(d => d.deviceId === deviceId);
+    const device = await db.getDeviceById(deviceId);
     if (!device) return res.status(404).json({ error: 'Device not found' });
 
-    const userImages = await images.findAll(i => i.userId === device.userId);
-    const currentIndex = device.currentImageIndex || 0;
-    const nextIndex = (currentIndex + 1) % Math.max(1, userImages.length);
+    const userImages = await db.getImagesByUserId(device.userId);
 
-    await devices.update(device.id, { currentImageIndex: nextIndex });
-    res.json({ nextIndex, total: userImages.length });
+    res.json({ nextIndex: 0, total: userImages.length });
   } catch (error) {
     next(error);
   }
@@ -580,6 +503,7 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: isProduction ? 'production' : 'development',
+    storage: db.isUsingPostgres() ? 'PostgreSQL' : 'JSON files',
     paths: {
       data: DATA_DIR,
       uploads: UPLOAD_DIR,
@@ -607,6 +531,10 @@ app.use((error, req, res, next) => {
 // ==================== START SERVER ====================
 
 async function init() {
+  // Initialize database (PostgreSQL if DATABASE_URL set, otherwise JSON)
+  await db.initDatabase();
+  console.log(`Storage: ${db.isUsingPostgres() ? 'PostgreSQL' : 'JSON files'}`);
+
   // Create necessary directories
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
