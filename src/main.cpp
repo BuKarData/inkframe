@@ -90,6 +90,11 @@ int totalImages = 0;
 unsigned long lastImageRotation = 0;
 unsigned long imageRotateInterval = 3600000;  // 1 hour default
 
+// Server-driven polling variables
+int serverRefreshVersion = 0;
+int nextPollSeconds = 30;  // Default: poll every 30 seconds
+unsigned long lastPollTime = 0;
+
 // Image buffer (200x200 / 8 = 5000 bytes)
 uint8_t imageBuffer[DISPLAY_WIDTH * DISPLAY_HEIGHT / 8];
 bool hasImage = false;
@@ -110,6 +115,7 @@ void fetchDeviceSettings();
 void toggleMode();
 void advanceImage();
 void setupSecureClient();
+bool pollServerForInstructions();
 
 // ============================================================
 // SETUP
@@ -155,13 +161,13 @@ void setup() {
 }
 
 // ============================================================
-// LOOP
+// LOOP - SERVER-DRIVEN POLLING
+// The server tells us when to refresh, what mode to use, etc.
 // ============================================================
 void loop() {
-  static unsigned long lastUpdate = 0;
   static unsigned long lastButtonPress = 0;
 
-  // Check for button press
+  // Check for button press (manual mode toggle)
   static bool lastButtonState = HIGH;
   bool currentButtonState = digitalRead(BUTTON_PIN);
 
@@ -169,6 +175,8 @@ void loop() {
     lastButtonPress = millis();
     Serial.println("Button pressed - toggling mode");
     toggleMode();
+    // Reset poll timer to allow immediate server sync
+    lastPollTime = 0;
   }
   lastButtonState = currentButtonState;
 
@@ -177,39 +185,13 @@ void loop() {
     return;
   }
 
-  // Mode-specific updates
-  if (currentMode == MODE_DASHBOARD) {
-    // Update dashboard every 5 minutes (fetch server-rendered dashboard with weather/calendar/todos)
-    if (millis() - lastUpdate > 300000) {
-      if (fetchDashboard()) {
-        drawImage();
-      } else {
-        drawDashboard();  // Local fallback
-      }
-      lastUpdate = millis();
-    }
-  } else if (currentMode == MODE_IMAGE) {
-    // Check for image rotation (carousel mode)
-    if (totalImages > 1 && millis() - lastImageRotation > imageRotateInterval) {
-      advanceImage();
-      lastImageRotation = millis();
-    }
+  // Server-driven polling
+  // Poll interval is controlled by server (returned in 'n' field)
+  unsigned long pollIntervalMs = (unsigned long)nextPollSeconds * 1000UL;
 
-    // Refresh image if needed
-    if (!hasImage || millis() - lastUpdate > 600000) {  // Every 10 minutes or if no image
-      if (fetchImage(currentImageIndex)) {
-        drawImage();
-      } else if (!hasImage) {
-        // No images available, switch to dashboard
-        currentMode = MODE_DASHBOARD;
-        if (fetchDashboard()) {
-          drawImage();
-        } else {
-          drawDashboard();
-        }
-      }
-      lastUpdate = millis();
-    }
+  if (millis() - lastPollTime > pollIntervalMs) {
+    pollServerForInstructions();
+    lastPollTime = millis();
   }
 
   delay(50);
@@ -378,6 +360,100 @@ void fetchDeviceSettings() {
   }
 
   http.end();
+}
+
+// ============================================================
+// POLL SERVER FOR INSTRUCTIONS (Server-driven logic)
+// This is the main polling function - server tells us what to do
+// ============================================================
+bool pollServerForInstructions() {
+  Serial.println("Polling server for instructions...");
+
+  HTTPClient http;
+  String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
+
+  // Build URL with current state so server can compare
+  String url = String(API_SERVER) + "/api/device/" + deviceId + "/poll";
+  url += "?v=" + String(serverRefreshVersion);
+  url += "&m=" + String(currentMode == MODE_DASHBOARD ? "dashboard" : "photo");
+  url += "&i=" + String(currentImageIndex);
+
+  http.begin(secureClient, url);
+  http.setTimeout(10000);
+  int httpCode = http.GET();
+
+  if (httpCode == 200) {
+    String response = http.getString();
+    Serial.printf("Poll response: %s\n", response.c_str());
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, response);
+
+    if (!error) {
+      bool shouldRefresh = doc["r"] | false;
+      const char* mode = doc["m"] | "dashboard";
+      int newVersion = doc["v"] | 0;
+      int newPollSeconds = doc["n"] | 30;
+      int newIndex = doc["i"] | 0;
+      int newTotal = doc["t"] | 0;
+
+      Serial.printf("Poll result: refresh=%d, mode=%s, ver=%d, next=%ds, idx=%d/%d\n",
+                    shouldRefresh, mode, newVersion, newPollSeconds, newIndex, newTotal);
+
+      // Update local state from server
+      serverRefreshVersion = newVersion;
+      nextPollSeconds = newPollSeconds;
+      totalImages = newTotal;
+
+      // Determine if mode changed
+      DisplayMode newMode = (strcmp(mode, "photo") == 0) ? MODE_IMAGE : MODE_DASHBOARD;
+      bool modeChanged = (newMode != currentMode);
+
+      // Update image index if changed
+      bool indexChanged = (newIndex != currentImageIndex);
+      currentImageIndex = newIndex;
+
+      // Refresh display if server says so, or mode/index changed
+      if (shouldRefresh || modeChanged || indexChanged) {
+        currentMode = newMode;
+        http.end();
+
+        Serial.printf("Refreshing display (reason: refresh=%d, modeChange=%d, indexChange=%d)\n",
+                      shouldRefresh, modeChanged, indexChanged);
+
+        // Fetch and display new content based on mode
+        if (currentMode == MODE_DASHBOARD) {
+          if (fetchDashboard()) {
+            drawImage();
+          } else {
+            drawDashboard();  // Local fallback
+          }
+        } else {
+          if (totalImages > 0 && fetchImage(currentImageIndex)) {
+            drawImage();
+          } else {
+            // No images, fall back to dashboard
+            currentMode = MODE_DASHBOARD;
+            if (fetchDashboard()) {
+              drawImage();
+            } else {
+              drawDashboard();
+            }
+          }
+        }
+        return true;
+      }
+    } else {
+      Serial.printf("JSON parse error: %s\n", error.c_str());
+    }
+  } else if (httpCode == 404) {
+    Serial.println("Device not found on server");
+  } else {
+    Serial.printf("Poll failed: %d\n", httpCode);
+  }
+
+  http.end();
+  return false;
 }
 
 // ============================================================
@@ -615,18 +691,20 @@ void setupWiFi() {
     // Register device with server
     registerDevice();
 
-    // Fetch settings and check for images
+    // Fetch settings (for backward compatibility)
     fetchDeviceSettings();
 
-    // Try to fetch and display an image, otherwise show dashboard
-    if (totalImages > 0 && fetchImage(currentImageIndex)) {
-      currentMode = MODE_IMAGE;
-      drawImage();
-      lastImageRotation = millis();
-    } else {
+    // Initial poll to get server instructions and display content
+    // Server will tell us what mode to use and whether to refresh
+    Serial.println("Initial server poll...");
+    if (!pollServerForInstructions()) {
+      // Polling failed, show local dashboard as fallback
       currentMode = MODE_DASHBOARD;
       drawDashboard();
     }
+
+    // Set initial poll time so next poll happens after configured interval
+    lastPollTime = millis();
   } else {
     Serial.println("\nWiFi connection failed or timed out.");
     Serial.println("Device will work in offline mode.");

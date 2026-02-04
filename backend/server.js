@@ -889,6 +889,235 @@ app.post('/api/device/:deviceId/set-mode', optionalAuth, async (req, res, next) 
   }
 });
 
+// ==================== COMPREHENSIVE ESP32 STATUS ENDPOINT ====================
+// This is the main endpoint ESP32 should poll every 30-60 seconds
+// It handles: refresh detection, auto-switch, image rotation - all automatically
+app.get('/api/device/:deviceId/status', optionalAuth, async (req, res, next) => {
+  try {
+    const { deviceId } = req.params;
+    const { espVersion = 0 } = req.query; // ESP32's current known version
+
+    const device = await db.getDeviceById(deviceId);
+    if (!device) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    // Update last seen
+    await db.updateDevice(deviceId, { lastSeen: new Date().toISOString() });
+
+    if (!device.userId) {
+      return res.json({
+        shouldRefresh: false,
+        displayMode: 'dashboard',
+        refreshVersion: 0,
+        imageIndex: 0,
+        totalImages: 0,
+        message: 'Device not linked'
+      });
+    }
+
+    const [userImages, settings] = await Promise.all([
+      db.getImagesByUserId(device.userId),
+      db.getUserSettings(device.userId)
+    ]);
+
+    const serverVersion = device.refreshVersion || 0;
+    const autoImageMode = settings?.autoImageMode || 0;
+    const rotationInterval = settings?.rotationInterval || 60;
+    const now = new Date();
+    const nowISO = now.toISOString();
+    const nowMs = now.getTime();
+
+    let effectiveMode = device.displayMode || 'dashboard';
+    let currentIndex = device.currentImageIndex || 0;
+    let shouldRefresh = false;
+    let refreshReason = null;
+
+    // 1. Check if ESP32 needs to refresh due to version change (user made changes)
+    if (serverVersion > parseInt(espVersion)) {
+      shouldRefresh = true;
+      refreshReason = 'version_changed';
+    }
+
+    // 2. Auto-switch logic: after inactivity, switch from dashboard to photos
+    if (autoImageMode > 0 && userImages.length > 0 && device.lastUserActivity) {
+      const lastActivity = new Date(device.lastUserActivity).getTime();
+      const inactivityMinutes = (nowMs - lastActivity) / (1000 * 60);
+
+      if (inactivityMinutes >= autoImageMode && effectiveMode === 'dashboard') {
+        effectiveMode = 'photo';
+        // Update device mode in database
+        await db.updateDevice(deviceId, { displayMode: 'photo' });
+        shouldRefresh = true;
+        refreshReason = refreshReason || 'auto_switch_to_photos';
+      }
+    }
+
+    // 3. Image rotation logic: cycle through photos at configured interval
+    if (effectiveMode === 'photo' && userImages.length > 1) {
+      const lastImageChange = device.lastImageChange ? new Date(device.lastImageChange).getTime() : 0;
+      const timeSinceLastChange = (nowMs - lastImageChange) / (1000 * 60); // in minutes
+
+      if (timeSinceLastChange >= rotationInterval || !device.lastImageChange) {
+        // Time to rotate to next image
+        const nextIndex = (currentIndex + 1) % userImages.length;
+        currentIndex = nextIndex;
+
+        // Update device with new index and timestamp
+        await db.updateDevice(deviceId, {
+          currentImageIndex: nextIndex,
+          lastImageChange: nowISO
+        });
+
+        shouldRefresh = true;
+        refreshReason = refreshReason || 'image_rotation';
+      }
+    }
+
+    // 4. If no images available, force dashboard mode
+    if (userImages.length === 0) {
+      effectiveMode = 'dashboard';
+    }
+
+    // 5. Track that ESP32 has acknowledged this version
+    if (shouldRefresh) {
+      await db.updateDevice(deviceId, { lastEspVersion: serverVersion });
+    }
+
+    res.json({
+      shouldRefresh,
+      refreshReason,
+      displayMode: effectiveMode,
+      refreshVersion: serverVersion,
+      imageIndex: currentIndex,
+      totalImages: userImages.length,
+      rotationIntervalMin: rotationInterval,
+      autoSwitchMin: autoImageMode,
+      serverTime: nowISO
+    });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==================== LIGHTWEIGHT POLLING ENDPOINT FOR ESP32 ====================
+// This is the main endpoint ESP32 should call every N seconds
+// Returns compact JSON with control instructions
+
+app.get('/api/device/:deviceId/poll', optionalAuth, async (req, res, next) => {
+  try {
+    const { deviceId } = req.params;
+    const { v: espVersion = 0, m: currentMode = 'dashboard', i: currentIndex = 0 } = req.query;
+
+    const device = await db.getDeviceById(deviceId);
+    if (!device) {
+      return res.status(404).json({ e: 'not_found' });
+    }
+
+    // Update last seen
+    await db.updateDevice(deviceId, { lastSeen: new Date().toISOString() });
+
+    if (!device.userId) {
+      return res.json({
+        r: false,      // refresh needed
+        m: 'dashboard', // mode
+        v: 0,          // version
+        n: 60,         // next poll in seconds
+        i: 0,          // image index
+        t: 0           // total images
+      });
+    }
+
+    const [userImages, settings] = await Promise.all([
+      db.getImagesByUserId(device.userId),
+      db.getUserSettings(device.userId)
+    ]);
+
+    const serverVersion = device.refreshVersion || 0;
+    const autoImageMode = settings?.autoImageMode || 0;
+    const rotationInterval = settings?.rotationInterval || 60;
+    const now = Date.now();
+    const nowISO = new Date().toISOString();
+
+    let effectiveMode = device.displayMode || 'dashboard';
+    let imageIndex = device.currentImageIndex || 0;
+    let shouldRefresh = false;
+    let nextPollSeconds = 30; // Default: poll every 30 seconds for responsiveness
+
+    // 1. Version change detection (user made changes in web app)
+    if (serverVersion > parseInt(espVersion)) {
+      shouldRefresh = true;
+      nextPollSeconds = 5; // Quick re-poll after refresh
+      console.log(`[Poll] Device ${deviceId}: version changed ${espVersion} -> ${serverVersion}`);
+    }
+
+    // 2. Auto-switch logic: after inactivity, switch from dashboard to photos
+    if (autoImageMode > 0 && userImages.length > 0 && device.lastUserActivity) {
+      const lastActivity = new Date(device.lastUserActivity).getTime();
+      const inactivityMinutes = (now - lastActivity) / (1000 * 60);
+
+      if (inactivityMinutes >= autoImageMode && effectiveMode === 'dashboard') {
+        effectiveMode = 'photo';
+        await db.updateDevice(deviceId, { displayMode: 'photo' });
+        shouldRefresh = true;
+        console.log(`[Poll] Device ${deviceId}: auto-switch to photos after ${inactivityMinutes.toFixed(1)} min inactivity`);
+      }
+
+      // Calculate next poll: check closer to when auto-switch might happen
+      const minutesUntilSwitch = autoImageMode - inactivityMinutes;
+      if (minutesUntilSwitch > 0 && minutesUntilSwitch < 5) {
+        nextPollSeconds = Math.max(10, Math.ceil(minutesUntilSwitch * 60));
+      }
+    }
+
+    // 3. Image rotation logic: cycle through photos at configured interval
+    if (effectiveMode === 'photo' && userImages.length > 1) {
+      const lastImageChange = device.lastImageChange ? new Date(device.lastImageChange).getTime() : 0;
+      const timeSinceLastChange = (now - lastImageChange) / (1000 * 60); // in minutes
+
+      if (timeSinceLastChange >= rotationInterval || !device.lastImageChange) {
+        // Time to rotate to next image
+        const nextIndex = (imageIndex + 1) % userImages.length;
+        imageIndex = nextIndex;
+
+        // Update device with new index and timestamp
+        await db.updateDevice(deviceId, {
+          currentImageIndex: nextIndex,
+          lastImageChange: nowISO
+        });
+
+        shouldRefresh = true;
+        console.log(`[Poll] Device ${deviceId}: image rotation ${imageIndex-1} -> ${nextIndex}`);
+      }
+
+      // Next poll: when rotation should happen
+      const minutesUntilRotation = rotationInterval - timeSinceLastChange;
+      if (minutesUntilRotation > 0) {
+        nextPollSeconds = Math.min(nextPollSeconds, Math.max(10, Math.ceil(minutesUntilRotation * 60)));
+      }
+    }
+
+    // 4. No images = force dashboard mode
+    if (userImages.length === 0) {
+      effectiveMode = 'dashboard';
+    }
+
+    // Compact response (short keys to save bandwidth for ESP32)
+    res.json({
+      r: shouldRefresh,           // refresh needed
+      m: effectiveMode,           // mode: 'dashboard' or 'photo'
+      v: serverVersion,           // version number
+      n: Math.min(300, Math.max(10, nextPollSeconds)), // next poll in seconds (10s - 5min)
+      i: imageIndex,              // current image index
+      t: userImages.length        // total images
+    });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ==================== WEATHER MODULE ====================
 
 app.get('/api/weather', authenticate, async (req, res, next) => {

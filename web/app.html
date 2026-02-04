@@ -557,13 +557,63 @@
     .editor-container {
       display: grid;
       gap: 1rem;
+      grid-template-columns: 1fr;
     }
 
     @media (min-width: 768px) {
       .editor-container {
-        grid-template-columns: 1fr 280px;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+    }
+
+    @media (min-width: 1100px) {
+      .editor-container {
+        grid-template-columns: auto auto 280px;
         gap: 1.5rem;
       }
+    }
+
+    .editor-source-section {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .source-container {
+      position: relative;
+      max-width: 300px;
+      max-height: 300px;
+      overflow: hidden;
+      border-radius: 8px;
+      cursor: grab;
+      user-select: none;
+      border: 2px solid var(--border);
+    }
+
+    .source-container:active {
+      cursor: grabbing;
+    }
+
+    .source-container img {
+      display: block;
+      max-width: 300px;
+      max-height: 300px;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .crop-overlay {
+      position: absolute;
+      border: 2px dashed var(--accent);
+      background: rgba(26, 26, 26, 0.1);
+      pointer-events: none;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+      transition: all 0.1s ease-out;
     }
 
     .editor-preview {
@@ -1089,6 +1139,16 @@
             <div id="editorEmpty" class="gallery-empty" data-i18n="app.selectPhotoToEdit">Select a photo from the gallery to edit</div>
             <div id="editorActive" class="hidden">
               <div class="editor-container">
+                <!-- Source Image with Crop Overlay -->
+                <div class="editor-source-section">
+                  <div class="source-container" id="sourceContainer">
+                    <img id="sourceImage" src="" alt="Source">
+                    <div class="crop-overlay" id="cropOverlay"></div>
+                  </div>
+                  <p class="preview-label" data-i18n="app.dragToCrop">Drag to position crop area</p>
+                </div>
+
+                <!-- E-ink Preview -->
                 <div class="editor-preview">
                   <div class="preview-frame" id="previewFrame">
                     <span data-i18n="app.preview">Preview</span>
@@ -1124,7 +1184,7 @@
                         <span class="slider-label" data-i18n="app.brightness">Brightness</span>
                         <span class="slider-value" id="brightnessValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="brightnessSlider" min="-100" max="100" value="0" oninput="updateSliderValue('brightness'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="brightnessSlider" min="-100" max="100" value="0" oninput="updateSliderValue('brightness'); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1132,7 +1192,7 @@
                         <span class="slider-label" data-i18n="app.contrast">Contrast</span>
                         <span class="slider-value" id="contrastValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="contrastSlider" min="-100" max="100" value="0" oninput="updateSliderValue('contrast'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="contrastSlider" min="-100" max="100" value="0" oninput="updateSliderValue('contrast'); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1140,7 +1200,7 @@
                         <span class="slider-label" data-i18n="app.sharpness">Sharpness</span>
                         <span class="slider-value" id="sharpnessValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="sharpnessSlider" min="0" max="100" value="0" oninput="updateSliderValue('sharpness'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="sharpnessSlider" min="0" max="100" value="0" oninput="updateSliderValue('sharpness'); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1148,7 +1208,7 @@
                         <span class="slider-label" data-i18n="app.gamma">Gamma</span>
                         <span class="slider-value" id="gammaValue">1.0</span>
                       </div>
-                      <input type="range" class="slider" id="gammaSlider" min="50" max="200" value="100" oninput="updateSliderValue('gamma'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="gammaSlider" min="50" max="200" value="100" oninput="updateSliderValue('gamma'); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
                     </div>
                   </div>
 
@@ -1185,33 +1245,23 @@
                     </div>
                   </div>
 
-                  <!-- Crop -->
+                  <!-- Crop/Zoom -->
                   <div class="control-section">
-                    <div class="control-section-title" data-i18n="app.crop">Crop</div>
+                    <div class="control-section-title" data-i18n="app.cropZoom">Zoom & Crop</div>
 
                     <div class="slider-group">
                       <div class="slider-header">
-                        <span class="slider-label" data-i18n="app.cropX">Horizontal offset</span>
-                        <span class="slider-value" id="cropXValue">0%</span>
-                      </div>
-                      <input type="range" class="slider" id="cropXSlider" min="0" max="50" value="0" oninput="updateCrop('cropX'); markEditorChange(); updatePreview()">
-                    </div>
-
-                    <div class="slider-group">
-                      <div class="slider-header">
-                        <span class="slider-label" data-i18n="app.cropY">Vertical offset</span>
-                        <span class="slider-value" id="cropYValue">0%</span>
-                      </div>
-                      <input type="range" class="slider" id="cropYSlider" min="0" max="50" value="0" oninput="updateCrop('cropY'); markEditorChange(); updatePreview()">
-                    </div>
-
-                    <div class="slider-group">
-                      <div class="slider-header">
-                        <span class="slider-label" data-i18n="app.cropZoom">Zoom</span>
+                        <span class="slider-label" data-i18n="app.zoom">Zoom</span>
                         <span class="slider-value" id="cropZoomValue">100%</span>
                       </div>
-                      <input type="range" class="slider" id="cropZoomSlider" min="50" max="100" value="100" oninput="updateCrop('cropZoom'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="cropZoomSlider" min="30" max="100" value="100" oninput="updateCropZoom(); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
                     </div>
+
+                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;" data-i18n="app.cropHint">Drag on the source image to position</p>
+
+                    <!-- Hidden sliders for crop position (controlled by drag) -->
+                    <input type="hidden" id="cropXSlider" value="0">
+                    <input type="hidden" id="cropYSlider" value="0">
                   </div>
 
                   <!-- Text Overlay -->
@@ -1299,6 +1349,146 @@
     };
     let previewDebounce = null;
 
+    // Client-side preview for instant feedback
+    let clientPreviewCanvas = null;
+    let clientPreviewCtx = null;
+    let sourceImageData = null;
+    let sourceImageElement = null;
+
+    function initClientPreview() {
+      clientPreviewCanvas = document.createElement('canvas');
+      clientPreviewCanvas.width = 200;
+      clientPreviewCanvas.height = 200;
+      clientPreviewCtx = clientPreviewCanvas.getContext('2d', { willReadFrequently: true });
+    }
+
+    // Load source image into canvas for client-side processing
+    function loadSourceForClientPreview() {
+      if (!editingImage) return;
+
+      sourceImageElement = new Image();
+      sourceImageElement.crossOrigin = 'anonymous';
+      sourceImageElement.onload = () => {
+        // Draw source image to get pixel data
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 200;
+        tempCanvas.height = 200;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Calculate crop area
+        const cropW = editorSettings.cropW || 1;
+        const cropH = editorSettings.cropH || 1;
+        const cropX = editorSettings.cropX || 0;
+        const cropY = editorSettings.cropY || 0;
+
+        const srcW = sourceImageElement.width * cropW;
+        const srcH = sourceImageElement.height * cropH;
+        const srcX = sourceImageElement.width * cropX;
+        const srcY = sourceImageElement.height * cropY;
+
+        tempCtx.drawImage(sourceImageElement, srcX, srcY, srcW, srcH, 0, 0, 200, 200);
+        sourceImageData = tempCtx.getImageData(0, 0, 200, 200);
+
+        // Initial client preview
+        updateClientPreview();
+      };
+      sourceImageElement.src = editingImage.url;
+    }
+
+    // Fast client-side preview (instant, no server call)
+    function updateClientPreview() {
+      if (!sourceImageData || !clientPreviewCtx || !editingImage) return;
+
+      // Reload source with current crop settings
+      if (sourceImageElement && sourceImageElement.complete) {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 200;
+        tempCanvas.height = 200;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        const cropW = editorSettings.cropW || 1;
+        const cropH = editorSettings.cropH || 1;
+        const cropX = editorSettings.cropX || 0;
+        const cropY = editorSettings.cropY || 0;
+
+        const srcW = sourceImageElement.width * cropW;
+        const srcH = sourceImageElement.height * cropH;
+        const srcX = sourceImageElement.width * cropX;
+        const srcY = sourceImageElement.height * cropY;
+
+        tempCtx.drawImage(sourceImageElement, srcX, srcY, srcW, srcH, 0, 0, 200, 200);
+        sourceImageData = tempCtx.getImageData(0, 0, 200, 200);
+      }
+
+      // Create output image data
+      const outputData = clientPreviewCtx.createImageData(200, 200);
+      const src = sourceImageData.data;
+      const dst = outputData.data;
+
+      // Get adjustment values
+      const brightness = editorSettings.brightness / 100;
+      const contrast = (editorSettings.contrast + 100) / 100;
+      const gamma = editorSettings.gamma || 1.0;
+
+      // Apply adjustments pixel by pixel
+      for (let i = 0; i < src.length; i += 4) {
+        let r = src[i];
+        let g = src[i + 1];
+        let b = src[i + 2];
+
+        // Apply contrast (centered at 128)
+        r = ((r / 255 - 0.5) * contrast + 0.5) * 255;
+        g = ((g / 255 - 0.5) * contrast + 0.5) * 255;
+        b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
+
+        // Apply brightness
+        r += brightness * 255;
+        g += brightness * 255;
+        b += brightness * 255;
+
+        // Apply gamma
+        if (gamma !== 1.0) {
+          r = 255 * Math.pow(Math.max(0, r / 255), 1 / gamma);
+          g = 255 * Math.pow(Math.max(0, g / 255), 1 / gamma);
+          b = 255 * Math.pow(Math.max(0, b / 255), 1 / gamma);
+        }
+
+        // Apply invert
+        if (editorSettings.invert) {
+          r = 255 - r;
+          g = 255 - g;
+          b = 255 - b;
+        }
+
+        // Clamp values
+        dst[i] = Math.max(0, Math.min(255, r));
+        dst[i + 1] = Math.max(0, Math.min(255, g));
+        dst[i + 2] = Math.max(0, Math.min(255, b));
+        dst[i + 3] = 255;
+      }
+
+      // Put processed data to canvas
+      clientPreviewCtx.putImageData(outputData, 0, 0);
+
+      // Simple threshold dithering preview (fast approximation)
+      const previewData = clientPreviewCtx.getImageData(0, 0, 200, 200);
+      const pd = previewData.data;
+      for (let i = 0; i < pd.length; i += 4) {
+        const gray = 0.299 * pd[i] + 0.587 * pd[i + 1] + 0.114 * pd[i + 2];
+        const bw = gray > 128 ? 255 : 0;
+        pd[i] = pd[i + 1] = pd[i + 2] = bw;
+      }
+      clientPreviewCtx.putImageData(previewData, 0, 0);
+
+      // Update preview frame with canvas
+      const frame = document.getElementById('previewFrame');
+      frame.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = clientPreviewCanvas.toDataURL();
+      img.alt = 'Preview';
+      frame.appendChild(img);
+    }
+
     // Pending changes tracking
     let pendingChanges = {
       settings: false,
@@ -1341,7 +1531,8 @@
           small: 'Small', medium: 'Medium', large: 'Large',
           autoImageMode: 'Auto switch to photos', autoImageModeHint: 'After inactivity',
           disabled: 'Disabled',
-          displayMode: 'Display Mode', dashboard: 'Dashboard', photos: 'Photos'
+          displayMode: 'Display Mode', dashboard: 'Dashboard', photos: 'Photos',
+          dragToCrop: 'Drag to position crop area', zoom: 'Zoom', cropHint: 'Drag on the source image to position'
         }
       },
       pl: {
@@ -1374,7 +1565,8 @@
           small: 'Mały', medium: 'Średni', large: 'Duży',
           autoImageMode: 'Automatyczne zdjęcia', autoImageModeHint: 'Po braku aktywności',
           disabled: 'Wyłączone',
-          displayMode: 'Tryb wyświetlania', dashboard: 'Panel', photos: 'Zdjęcia'
+          displayMode: 'Tryb wyświetlania', dashboard: 'Panel', photos: 'Zdjęcia',
+          dragToCrop: 'Przeciągnij aby ustawić kadr', zoom: 'Powiększenie', cropHint: 'Przeciągnij na obrazie źródłowym'
         }
       },
       de: {
@@ -1407,7 +1599,8 @@
           small: 'Klein', medium: 'Mittel', large: 'Groß',
           autoImageMode: 'Auto-Fotomodus', autoImageModeHint: 'Nach Inaktivität',
           disabled: 'Deaktiviert',
-          displayMode: 'Anzeigemodus', dashboard: 'Dashboard', photos: 'Fotos'
+          displayMode: 'Anzeigemodus', dashboard: 'Dashboard', photos: 'Fotos',
+          dragToCrop: 'Ziehen zum Positionieren', zoom: 'Zoom', cropHint: 'Auf dem Bild ziehen'
         }
       },
       fr: {
@@ -1440,7 +1633,8 @@
           small: 'Petit', medium: 'Moyen', large: 'Grand',
           autoImageMode: 'Mode photo auto', autoImageModeHint: 'Après inactivité',
           disabled: 'Désactivé',
-          displayMode: 'Mode d\'affichage', dashboard: 'Tableau de bord', photos: 'Photos'
+          displayMode: 'Mode d\'affichage', dashboard: 'Tableau de bord', photos: 'Photos',
+          dragToCrop: 'Glisser pour positionner', zoom: 'Zoom', cropHint: 'Glisser sur l\'image source'
         }
       },
       es: {
@@ -1473,7 +1667,8 @@
           small: 'Pequeño', medium: 'Mediano', large: 'Grande',
           autoImageMode: 'Modo foto auto', autoImageModeHint: 'Después de inactividad',
           disabled: 'Desactivado',
-          displayMode: 'Modo de visualización', dashboard: 'Panel', photos: 'Fotos'
+          displayMode: 'Modo de visualización', dashboard: 'Panel', photos: 'Fotos',
+          dragToCrop: 'Arrastrar para posicionar', zoom: 'Zoom', cropHint: 'Arrastrar en la imagen'
         }
       }
     };
@@ -1842,6 +2037,8 @@
         document.getElementById('editorActive').classList.remove('hidden');
         switchTab('editor');
         renderGallery();
+        loadSourceImage();
+        loadSourceForClientPreview();  // Load source for instant client-side preview
         updatePreview();
       }
     }
@@ -1969,20 +2166,148 @@
       updateSliderValue('gamma');
     }
 
+    // Visual crop overlay variables
+    let sourceImageLoaded = false;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let cropStartX = 0;
+    let cropStartY = 0;
+
+    function updateCropZoom() {
+      const val = parseInt(document.getElementById('cropZoomSlider').value) / 100;
+      editorSettings.cropW = val;
+      editorSettings.cropH = val;
+      document.getElementById('cropZoomValue').textContent = Math.round(val * 100) + '%';
+
+      // Constrain crop position when zooming
+      const maxOffset = 1 - val;
+      editorSettings.cropX = Math.min(editorSettings.cropX, maxOffset);
+      editorSettings.cropY = Math.min(editorSettings.cropY, maxOffset);
+
+      updateCropOverlay();
+      // updatePreview() is called by onchange event on the slider
+    }
+
+    function updateCropOverlay() {
+      if (!editingImage || !sourceImageLoaded) return;
+
+      const container = document.getElementById('sourceContainer');
+      const img = document.getElementById('sourceImage');
+      const overlay = document.getElementById('cropOverlay');
+
+      if (!container || !img || !overlay) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const imgRect = img.getBoundingClientRect();
+
+      // Calculate overlay position and size based on crop settings
+      const cropW = editorSettings.cropW;
+      const cropH = editorSettings.cropH;
+      const cropX = editorSettings.cropX;
+      const cropY = editorSettings.cropY;
+
+      // Overlay dimensions relative to displayed image
+      const overlayWidth = imgRect.width * cropW;
+      const overlayHeight = imgRect.height * cropH;
+      const overlayLeft = (imgRect.left - containerRect.left) + (imgRect.width * cropX);
+      const overlayTop = (imgRect.top - containerRect.top) + (imgRect.height * cropY);
+
+      overlay.style.width = overlayWidth + 'px';
+      overlay.style.height = overlayHeight + 'px';
+      overlay.style.left = overlayLeft + 'px';
+      overlay.style.top = overlayTop + 'px';
+    }
+
+    function setupCropDrag() {
+      const container = document.getElementById('sourceContainer');
+      if (!container) return;
+
+      container.addEventListener('mousedown', startCropDrag);
+      container.addEventListener('touchstart', startCropDrag, { passive: false });
+
+      document.addEventListener('mousemove', doCropDrag);
+      document.addEventListener('touchmove', doCropDrag, { passive: false });
+
+      document.addEventListener('mouseup', endCropDrag);
+      document.addEventListener('touchend', endCropDrag);
+    }
+
+    function startCropDrag(e) {
+      if (!editingImage || !sourceImageLoaded) return;
+      e.preventDefault();
+
+      isDragging = true;
+      const pos = getEventPos(e);
+      dragStartX = pos.x;
+      dragStartY = pos.y;
+      cropStartX = editorSettings.cropX;
+      cropStartY = editorSettings.cropY;
+
+      document.getElementById('sourceContainer').style.cursor = 'grabbing';
+    }
+
+    function doCropDrag(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+
+      const pos = getEventPos(e);
+      const img = document.getElementById('sourceImage');
+      const imgRect = img.getBoundingClientRect();
+
+      // Calculate movement as percentage of image size
+      const deltaX = (pos.x - dragStartX) / imgRect.width;
+      const deltaY = (pos.y - dragStartY) / imgRect.height;
+
+      // Update crop position (inverted because dragging moves the view, not the crop)
+      const maxOffset = 1 - editorSettings.cropW;
+      editorSettings.cropX = Math.max(0, Math.min(maxOffset, cropStartX - deltaX));
+      editorSettings.cropY = Math.max(0, Math.min(maxOffset, cropStartY - deltaY));
+
+      updateCropOverlay();
+      markEditorChange();
+
+      // Debounced preview update while dragging
+      if (previewDebounce) clearTimeout(previewDebounce);
+      previewDebounce = setTimeout(() => updatePreview(), 200);
+    }
+
+    function endCropDrag() {
+      if (!isDragging) return;
+      isDragging = false;
+
+      const container = document.getElementById('sourceContainer');
+      if (container) container.style.cursor = 'grab';
+
+      // Final preview update
+      updatePreview();
+    }
+
+    function getEventPos(e) {
+      if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function loadSourceImage() {
+      if (!editingImage) return;
+
+      const img = document.getElementById('sourceImage');
+      if (!img) return;
+
+      sourceImageLoaded = false;
+      img.onload = () => {
+        sourceImageLoaded = true;
+        updateCropOverlay();
+      };
+      img.src = editingImage.url;
+    }
+
+    // Legacy function for compatibility
     function updateCrop(type) {
-      if (type === 'cropX') {
-        const val = parseInt(document.getElementById('cropXSlider').value) / 100;
-        editorSettings.cropX = val;
-        document.getElementById('cropXValue').textContent = Math.round(val * 100) + '%';
-      } else if (type === 'cropY') {
-        const val = parseInt(document.getElementById('cropYSlider').value) / 100;
-        editorSettings.cropY = val;
-        document.getElementById('cropYValue').textContent = Math.round(val * 100) + '%';
-      } else if (type === 'cropZoom') {
-        const val = parseInt(document.getElementById('cropZoomSlider').value) / 100;
-        editorSettings.cropW = val;
-        editorSettings.cropH = val;
-        document.getElementById('cropZoomValue').textContent = Math.round(val * 100) + '%';
+      if (type === 'cropZoom') {
+        updateCropZoom();
       }
     }
 
@@ -2021,11 +2346,16 @@
       editorSettings.invert = !editorSettings.invert;
       document.getElementById('invertToggle').classList.toggle('active', editorSettings.invert);
       markEditorChange();
-      updatePreview();
+      updateClientPreview();  // Instant feedback
+      updatePreview();        // Server preview with dithering
     }
 
     function resetEditor() {
       resetEditorSettings();
+      // Update zoom slider UI
+      document.getElementById('cropZoomSlider').value = 100;
+      document.getElementById('cropZoomValue').textContent = '100%';
+      updateCropOverlay();
       updatePreview();
     }
 
@@ -2243,6 +2573,9 @@
 
       document.getElementById('userName').textContent = user?.name || user?.email || '';
 
+      // Initialize client-side preview canvas
+      initClientPreview();
+
       // Check for calendar callback
       const params = new URLSearchParams(window.location.search);
       if (params.get('calendar') === 'connected') {
@@ -2251,6 +2584,9 @@
       }
 
       setLanguage(currentLang);
+
+      // Setup crop drag handlers
+      setupCropDrag();
 
       await Promise.all([
         loadDevices(),

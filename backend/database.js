@@ -123,6 +123,9 @@ async function createTables() {
     'ALTER TABLE devices ADD COLUMN IF NOT EXISTS display_mode TEXT DEFAULT \'dashboard\'',
     'ALTER TABLE devices ADD COLUMN IF NOT EXISTS current_image_index INTEGER DEFAULT 0',
     'ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_user_activity TIMESTAMP',
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_image_change TIMESTAMP',
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_esp_version INTEGER DEFAULT 0',
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS config_json TEXT',
     'ALTER TABLE images ADD COLUMN IF NOT EXISTS image_data BYTEA',
     'ALTER TABLE images ADD COLUMN IF NOT EXISTS processed_data BYTEA',
     'ALTER TABLE images ADD COLUMN IF NOT EXISTS mime_type TEXT DEFAULT \'image/png\''
@@ -255,7 +258,10 @@ async function getDevices() {
         lastSeen: row.last_seen,
         displayMode: row.display_mode || 'dashboard',
         currentImageIndex: row.current_image_index || 0,
-        lastUserActivity: row.last_user_activity
+        lastUserActivity: row.last_user_activity,
+        lastImageChange: row.last_image_change,
+        lastEspVersion: row.last_esp_version || 0,
+        configJson: row.config_json ? JSON.parse(row.config_json) : {}
       };
     });
     return devices;
@@ -296,7 +302,10 @@ async function getDeviceById(id) {
       lastSeen: row.last_seen,
       displayMode: row.display_mode || 'dashboard',
       currentImageIndex: row.current_image_index || 0,
-      lastUserActivity: row.last_user_activity
+      lastUserActivity: row.last_user_activity,
+      lastImageChange: row.last_image_change,
+      lastEspVersion: row.last_esp_version || 0,
+      configJson: row.config_json ? JSON.parse(row.config_json) : {}
     };
   } else {
     const devices = await getDevices();
@@ -319,7 +328,10 @@ async function getDevicesByUserId(userId) {
       lastSeen: row.last_seen,
       displayMode: row.display_mode || 'dashboard',
       currentImageIndex: row.current_image_index || 0,
-      lastUserActivity: row.last_user_activity
+      lastUserActivity: row.last_user_activity,
+      lastImageChange: row.last_image_change,
+      lastEspVersion: row.last_esp_version || 0,
+      configJson: row.config_json ? JSON.parse(row.config_json) : {}
     }));
   } else {
     const devices = await getDevices();
@@ -386,6 +398,18 @@ async function updateDevice(id, updates) {
     if (updates.lastUserActivity !== undefined) {
       setClauses.push(`last_user_activity = $${paramIndex++}`);
       values.push(updates.lastUserActivity);
+    }
+    if (updates.lastImageChange !== undefined) {
+      setClauses.push(`last_image_change = $${paramIndex++}`);
+      values.push(updates.lastImageChange);
+    }
+    if (updates.lastEspVersion !== undefined) {
+      setClauses.push(`last_esp_version = $${paramIndex++}`);
+      values.push(updates.lastEspVersion);
+    }
+    if (updates.configJson !== undefined) {
+      setClauses.push(`config_json = $${paramIndex++}`);
+      values.push(JSON.stringify(updates.configJson));
     }
 
     if (setClauses.length > 0) {
