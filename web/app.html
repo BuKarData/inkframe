@@ -1184,7 +1184,9 @@
                         <span class="slider-label" data-i18n="app.brightness">Brightness</span>
                         <span class="slider-value" id="brightnessValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="brightnessSlider" min="-100" max="100" value="0" oninput="updateSliderValue('brightness'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="brightnessSlider" min="-100" max="100" value="0"
+                        oninput="updateSliderValue('brightness'); markEditorChange(); updateInstantPreview()"
+                        onchange="scheduleServerPreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1192,7 +1194,9 @@
                         <span class="slider-label" data-i18n="app.contrast">Contrast</span>
                         <span class="slider-value" id="contrastValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="contrastSlider" min="-100" max="100" value="0" oninput="updateSliderValue('contrast'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="contrastSlider" min="-100" max="100" value="0"
+                        oninput="updateSliderValue('contrast'); markEditorChange(); updateInstantPreview()"
+                        onchange="scheduleServerPreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1200,7 +1204,9 @@
                         <span class="slider-label" data-i18n="app.sharpness">Sharpness</span>
                         <span class="slider-value" id="sharpnessValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="sharpnessSlider" min="0" max="100" value="0" oninput="updateSliderValue('sharpness'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="sharpnessSlider" min="0" max="100" value="0"
+                        oninput="updateSliderValue('sharpness'); markEditorChange(); updateInstantPreview()"
+                        onchange="scheduleServerPreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1208,7 +1214,9 @@
                         <span class="slider-label" data-i18n="app.gamma">Gamma</span>
                         <span class="slider-value" id="gammaValue">1.0</span>
                       </div>
-                      <input type="range" class="slider" id="gammaSlider" min="50" max="200" value="100" oninput="updateSliderValue('gamma'); markEditorChange(); updatePreview()">
+                      <input type="range" class="slider" id="gammaSlider" min="50" max="200" value="100"
+                        oninput="updateSliderValue('gamma'); markEditorChange(); updateInstantPreview()"
+                        onchange="scheduleServerPreview()">
                     </div>
                   </div>
 
@@ -1254,7 +1262,9 @@
                         <span class="slider-label" data-i18n="app.zoom">Zoom</span>
                         <span class="slider-value" id="cropZoomValue">100%</span>
                       </div>
-                      <input type="range" class="slider" id="cropZoomSlider" min="30" max="100" value="100" oninput="updateCropZoom(); markEditorChange()">
+                      <input type="range" class="slider" id="cropZoomSlider" min="30" max="100" value="100"
+                        oninput="updateCropZoom(); markEditorChange(); updateInstantPreview()"
+                        onchange="scheduleServerPreview()">
                     </div>
 
                     <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;" data-i18n="app.cropHint">Drag on the source image to position</p>
@@ -1269,7 +1279,7 @@
                     <div class="control-section-title" data-i18n="app.textOverlay">Text Overlay</div>
 
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                      <input type="text" class="form-input" id="textOverlayInput" placeholder="Enter text..." oninput="markEditorChange(); updatePreview()" maxlength="30">
+                      <input type="text" class="form-input" id="textOverlayInput" placeholder="Enter text..." oninput="markEditorChange(); scheduleServerPreview()" maxlength="30">
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
@@ -1348,6 +1358,155 @@
       textSize: 'medium'
     };
     let previewDebounce = null;
+
+    // ==================== INSTANT PREVIEW ENGINE ====================
+    // Client-side canvas for real-time preview without server calls
+    let previewCanvas = null;
+    let previewCtx = null;
+    let sourceCanvas = null;
+    let sourceCtx = null;
+    let sourceImg = null;
+    let isSourceReady = false;
+
+    function initPreviewEngine() {
+      previewCanvas = document.createElement('canvas');
+      previewCanvas.width = 200;
+      previewCanvas.height = 200;
+      previewCtx = previewCanvas.getContext('2d', { willReadFrequently: true });
+
+      sourceCanvas = document.createElement('canvas');
+      sourceCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+    }
+
+    function loadImageForPreview(url) {
+      isSourceReady = false;
+      sourceImg = new Image();
+      sourceImg.crossOrigin = 'anonymous';
+      sourceImg.onload = () => {
+        sourceCanvas.width = sourceImg.width;
+        sourceCanvas.height = sourceImg.height;
+        sourceCtx.drawImage(sourceImg, 0, 0);
+        isSourceReady = true;
+        updateInstantPreview();
+      };
+      sourceImg.onerror = () => {
+        console.log('Failed to load image for preview, using server preview');
+        isSourceReady = false;
+      };
+      sourceImg.src = url;
+    }
+
+    function updateInstantPreview() {
+      if (!isSourceReady || !previewCtx || !editingImage) {
+        return;
+      }
+
+      const sw = sourceImg.width;
+      const sh = sourceImg.height;
+
+      // Calculate crop area from settings
+      // cropW/cropH = size of crop (1 = full image, 0.5 = half)
+      // cropX/cropY = position of crop (0 = start, 1-cropW = max)
+      const cropW = editorSettings.cropW || 1;
+      const cropH = editorSettings.cropH || 1;
+      const cropX = editorSettings.cropX || 0;
+      const cropY = editorSettings.cropY || 0;
+
+      const srcX = Math.round(sw * cropX);
+      const srcY = Math.round(sh * cropY);
+      const srcW = Math.round(sw * cropW);
+      const srcH = Math.round(sh * cropH);
+
+      // Clear and prepare canvas
+      previewCtx.fillStyle = 'white';
+      previewCtx.fillRect(0, 0, 200, 200);
+
+      // Save context for transformations
+      previewCtx.save();
+
+      // Apply rotation
+      const rotation = editorSettings.rotation || 0;
+      if (rotation !== 0) {
+        previewCtx.translate(100, 100);
+        previewCtx.rotate(rotation * Math.PI / 180);
+        previewCtx.translate(-100, -100);
+      }
+
+      // Apply flip
+      if (editorSettings.flipH || editorSettings.flipV) {
+        previewCtx.translate(editorSettings.flipH ? 200 : 0, editorSettings.flipV ? 200 : 0);
+        previewCtx.scale(editorSettings.flipH ? -1 : 1, editorSettings.flipV ? -1 : 1);
+      }
+
+      // Draw cropped image
+      previewCtx.drawImage(sourceImg, srcX, srcY, srcW, srcH, 0, 0, 200, 200);
+
+      previewCtx.restore();
+
+      // Apply brightness, contrast, gamma
+      const imageData = previewCtx.getImageData(0, 0, 200, 200);
+      const data = imageData.data;
+
+      const brightness = (editorSettings.brightness || 0) / 100;
+      const contrast = ((editorSettings.contrast || 0) + 100) / 100;
+      const gamma = editorSettings.gamma || 1.0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+
+        // Contrast (centered at 128)
+        r = ((r / 255 - 0.5) * contrast + 0.5) * 255;
+        g = ((g / 255 - 0.5) * contrast + 0.5) * 255;
+        b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
+
+        // Brightness
+        r += brightness * 255;
+        g += brightness * 255;
+        b += brightness * 255;
+
+        // Gamma
+        if (gamma !== 1.0) {
+          r = 255 * Math.pow(Math.max(0, Math.min(1, r / 255)), 1 / gamma);
+          g = 255 * Math.pow(Math.max(0, Math.min(1, g / 255)), 1 / gamma);
+          b = 255 * Math.pow(Math.max(0, Math.min(1, b / 255)), 1 / gamma);
+        }
+
+        // Invert
+        if (editorSettings.invert) {
+          r = 255 - r;
+          g = 255 - g;
+          b = 255 - b;
+        }
+
+        // Convert to grayscale and apply simple threshold (fast dithering approximation)
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        const bw = gray > 128 ? 255 : 0;
+
+        data[i] = data[i + 1] = data[i + 2] = bw;
+      }
+
+      previewCtx.putImageData(imageData, 0, 0);
+
+      // Update preview frame
+      const frame = document.getElementById('previewFrame');
+      if (frame) {
+        frame.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = previewCanvas.toDataURL();
+        img.alt = 'Preview';
+        frame.appendChild(img);
+      }
+    }
+
+    // Debounced server preview for accurate dithering
+    function scheduleServerPreview() {
+      if (previewDebounce) clearTimeout(previewDebounce);
+      previewDebounce = setTimeout(() => {
+        updatePreview();
+      }, 500);
+    }
 
     // Pending changes tracking
     let pendingChanges = {
@@ -1898,6 +2057,9 @@
         switchTab('editor');
         renderGallery();
         loadSourceImage();
+        // Load image for instant preview
+        loadImageForPreview(img.url);
+        // Initial server preview with proper dithering
         updatePreview();
       }
     }
@@ -2043,7 +2205,7 @@
       editorSettings.cropY = Math.min(editorSettings.cropY, maxOffset);
 
       updateCropOverlay();
-      updatePreview();
+      // Note: updateInstantPreview() and scheduleServerPreview() are called by slider handlers
     }
 
     function updateCropOverlay() {
@@ -2116,17 +2278,16 @@
       const deltaX = (pos.x - dragStartX) / imgRect.width;
       const deltaY = (pos.y - dragStartY) / imgRect.height;
 
-      // Update crop position (inverted because dragging moves the view, not the crop)
+      // Update crop position - drag the crop area directly (intuitive direction)
       const maxOffset = 1 - editorSettings.cropW;
-      editorSettings.cropX = Math.max(0, Math.min(maxOffset, cropStartX - deltaX));
-      editorSettings.cropY = Math.max(0, Math.min(maxOffset, cropStartY - deltaY));
+      editorSettings.cropX = Math.max(0, Math.min(maxOffset, cropStartX + deltaX));
+      editorSettings.cropY = Math.max(0, Math.min(maxOffset, cropStartY + deltaY));
 
       updateCropOverlay();
       markEditorChange();
 
-      // Debounced preview update while dragging
-      if (previewDebounce) clearTimeout(previewDebounce);
-      previewDebounce = setTimeout(() => updatePreview(), 200);
+      // Instant preview while dragging
+      updateInstantPreview();
     }
 
     function endCropDrag() {
@@ -2136,8 +2297,8 @@
       const container = document.getElementById('sourceContainer');
       if (container) container.style.cursor = 'grab';
 
-      // Final preview update
-      updatePreview();
+      // Schedule server preview for accurate dithering
+      scheduleServerPreview();
     }
 
     function getEventPos(e) {
@@ -2186,7 +2347,8 @@
     function rotateImage(degrees) {
       editorSettings.rotation = (editorSettings.rotation + degrees + 360) % 360;
       markEditorChange();
-      updatePreview();
+      updateInstantPreview();
+      scheduleServerPreview();
     }
 
     function flipImage(direction) {
@@ -2196,14 +2358,16 @@
         editorSettings.flipV = !editorSettings.flipV;
       }
       markEditorChange();
-      updatePreview();
+      updateInstantPreview();
+      scheduleServerPreview();
     }
 
     function toggleInvert() {
       editorSettings.invert = !editorSettings.invert;
       document.getElementById('invertToggle').classList.toggle('active', editorSettings.invert);
       markEditorChange();
-      updatePreview();
+      updateInstantPreview();
+      scheduleServerPreview();
     }
 
     function resetEditor() {
@@ -2212,7 +2376,8 @@
       document.getElementById('cropZoomSlider').value = 100;
       document.getElementById('cropZoomValue').textContent = '100%';
       updateCropOverlay();
-      updatePreview();
+      updateInstantPreview();
+      scheduleServerPreview();
     }
 
     async function updatePreview() {
@@ -2428,6 +2593,9 @@
       if (!checkAuth()) return;
 
       document.getElementById('userName').textContent = user?.name || user?.email || '';
+
+      // Initialize instant preview engine
+      initPreviewEngine();
 
       // Check for calendar callback
       const params = new URLSearchParams(window.location.search);
