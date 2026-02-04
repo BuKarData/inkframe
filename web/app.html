@@ -609,11 +609,48 @@
 
     .crop-overlay {
       position: absolute;
-      border: 2px dashed var(--accent);
-      background: rgba(26, 26, 26, 0.1);
-      pointer-events: none;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
-      transition: all 0.1s ease-out;
+      border: 2px solid white;
+      background: transparent;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+      cursor: move;
+    }
+
+    .crop-overlay::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 1px dashed rgba(0, 0, 0, 0.5);
+    }
+
+    /* Grid lines */
+    .crop-overlay::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to right, rgba(255,255,255,0.3) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.3) 1px, transparent 1px);
+      background-size: 33.33% 33.33%;
+    }
+
+    .crop-handle {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border: 2px solid var(--accent);
+      border-radius: 2px;
+      z-index: 10;
+    }
+
+    .crop-handle-nw { top: -8px; left: -8px; cursor: nw-resize; }
+    .crop-handle-ne { top: -8px; right: -8px; cursor: ne-resize; }
+    .crop-handle-sw { bottom: -8px; left: -8px; cursor: sw-resize; }
+    .crop-handle-se { bottom: -8px; right: -8px; cursor: se-resize; }
+
+    .crop-handle:hover {
+      background: var(--accent);
+      transform: scale(1.2);
     }
 
     .editor-preview {
@@ -1009,13 +1046,6 @@
               <div class="device-id" id="deviceId">-</div>
               <div class="device-status online" id="deviceStatus" data-i18n="app.linked">Linked</div>
             </div>
-            <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
-              <label class="form-label" data-i18n="app.displayMode">Display Mode</label>
-              <div style="display: flex; gap: 0.5rem; margin-top: 0.375rem;">
-                <button class="btn btn-outline btn-sm" id="modeDashboard" onclick="setDisplayMode('dashboard')" style="flex:1" data-i18n="app.dashboard">Dashboard</button>
-                <button class="btn btn-outline btn-sm" id="modePhoto" onclick="setDisplayMode('photo')" style="flex:1" data-i18n="app.photos">Photos</button>
-              </div>
-            </div>
           </div>
           <div id="noDevice">
             <div class="no-device">
@@ -1143,9 +1173,14 @@
                 <div class="editor-source-section">
                   <div class="source-container" id="sourceContainer">
                     <img id="sourceImage" src="" alt="Source">
-                    <div class="crop-overlay" id="cropOverlay"></div>
+                    <div class="crop-overlay" id="cropOverlay">
+                      <div class="crop-handle crop-handle-nw" data-handle="nw"></div>
+                      <div class="crop-handle crop-handle-ne" data-handle="ne"></div>
+                      <div class="crop-handle crop-handle-sw" data-handle="sw"></div>
+                      <div class="crop-handle crop-handle-se" data-handle="se"></div>
+                    </div>
                   </div>
-                  <p class="preview-label" data-i18n="app.dragToCrop">Drag to position crop area</p>
+                  <p class="preview-label">Drag corners to resize • Drag inside to move</p>
                 </div>
 
                 <!-- E-ink Preview -->
@@ -1253,25 +1288,19 @@
                     </div>
                   </div>
 
-                  <!-- Crop/Zoom -->
+                  <!-- Crop Info -->
                   <div class="control-section">
-                    <div class="control-section-title" data-i18n="app.cropZoom">Zoom & Crop</div>
-
-                    <div class="slider-group">
-                      <div class="slider-header">
-                        <span class="slider-label" data-i18n="app.zoom">Zoom</span>
-                        <span class="slider-value" id="cropZoomValue">100%</span>
-                      </div>
-                      <input type="range" class="slider" id="cropZoomSlider" min="30" max="100" value="100"
-                        oninput="updateCropZoom(); markEditorChange(); updateInstantPreview()"
-                        onchange="scheduleServerPreview()">
-                    </div>
-
-                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;" data-i18n="app.cropHint">Drag on the source image to position</p>
-
-                    <!-- Hidden sliders for crop position (controlled by drag) -->
+                    <div class="control-section-title" data-i18n="app.crop">Crop</div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+                      Drag corners to resize. Drag inside to move.
+                    </p>
+                    <button class="btn btn-outline btn-sm btn-block" style="margin-top: 0.5rem;" onclick="resetCrop()">
+                      Reset Crop
+                    </button>
+                    <!-- Hidden inputs for crop values -->
                     <input type="hidden" id="cropXSlider" value="0">
                     <input type="hidden" id="cropYSlider" value="0">
+                    <input type="hidden" id="cropZoomSlider" value="100">
                   </div>
 
                   <!-- Text Overlay -->
@@ -2168,12 +2197,6 @@
       document.getElementById('ditheringSelect').value = editorSettings.dithering;
       document.getElementById('invertToggle').classList.toggle('active', editorSettings.invert);
 
-      // Crop controls
-      document.getElementById('cropXSlider').value = editorSettings.cropX * 100;
-      document.getElementById('cropYSlider').value = editorSettings.cropY * 100;
-      document.getElementById('cropZoomSlider').value = editorSettings.cropW * 100;
-      document.getElementById('cropZoomValue').textContent = Math.round(editorSettings.cropW * 100) + '%';
-
       // Text overlay controls
       document.getElementById('textOverlayInput').value = editorSettings.textOverlay || '';
       document.getElementById('textPositionSelect').value = editorSettings.textPosition || 'bottom';
@@ -2185,28 +2208,18 @@
       updateSliderValue('gamma');
     }
 
-    // Visual crop overlay variables
+    // ==================== CROP SYSTEM ====================
     let sourceImageLoaded = false;
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let cropStartX = 0;
-    let cropStartY = 0;
-
-    function updateCropZoom() {
-      const val = parseInt(document.getElementById('cropZoomSlider').value) / 100;
-      editorSettings.cropW = val;
-      editorSettings.cropH = val;
-      document.getElementById('cropZoomValue').textContent = Math.round(val * 100) + '%';
-
-      // Constrain crop position when zooming
-      const maxOffset = 1 - val;
-      editorSettings.cropX = Math.min(editorSettings.cropX, maxOffset);
-      editorSettings.cropY = Math.min(editorSettings.cropY, maxOffset);
-
-      updateCropOverlay();
-      // Note: updateInstantPreview() and scheduleServerPreview() are called by slider handlers
-    }
+    let cropDragState = {
+      isDragging: false,
+      mode: null, // 'move' or 'resize-nw', 'resize-ne', 'resize-sw', 'resize-se'
+      startX: 0,
+      startY: 0,
+      startCropX: 0,
+      startCropY: 0,
+      startCropW: 0,
+      startCropH: 0
+    };
 
     function updateCropOverlay() {
       if (!editingImage || !sourceImageLoaded) return;
@@ -2232,42 +2245,56 @@
       const overlayLeft = (imgRect.left - containerRect.left) + (imgRect.width * cropX);
       const overlayTop = (imgRect.top - containerRect.top) + (imgRect.height * cropY);
 
-      overlay.style.width = overlayWidth + 'px';
-      overlay.style.height = overlayHeight + 'px';
+      overlay.style.width = Math.max(30, overlayWidth) + 'px';
+      overlay.style.height = Math.max(30, overlayHeight) + 'px';
       overlay.style.left = overlayLeft + 'px';
       overlay.style.top = overlayTop + 'px';
     }
 
     function setupCropDrag() {
+      const overlay = document.getElementById('cropOverlay');
       const container = document.getElementById('sourceContainer');
-      if (!container) return;
+      if (!overlay || !container) return;
 
-      container.addEventListener('mousedown', startCropDrag);
-      container.addEventListener('touchstart', startCropDrag, { passive: false });
+      // Handle clicks on the overlay (move) or handles (resize)
+      overlay.addEventListener('mousedown', startCropInteraction);
+      overlay.addEventListener('touchstart', startCropInteraction, { passive: false });
 
-      document.addEventListener('mousemove', doCropDrag);
-      document.addEventListener('touchmove', doCropDrag, { passive: false });
+      document.addEventListener('mousemove', doCropInteraction);
+      document.addEventListener('touchmove', doCropInteraction, { passive: false });
 
-      document.addEventListener('mouseup', endCropDrag);
-      document.addEventListener('touchend', endCropDrag);
+      document.addEventListener('mouseup', endCropInteraction);
+      document.addEventListener('touchend', endCropInteraction);
     }
 
-    function startCropDrag(e) {
+    function startCropInteraction(e) {
       if (!editingImage || !sourceImageLoaded) return;
       e.preventDefault();
+      e.stopPropagation();
 
-      isDragging = true;
       const pos = getEventPos(e);
-      dragStartX = pos.x;
-      dragStartY = pos.y;
-      cropStartX = editorSettings.cropX;
-      cropStartY = editorSettings.cropY;
+      const target = e.target;
 
-      document.getElementById('sourceContainer').style.cursor = 'grabbing';
+      cropDragState.isDragging = true;
+      cropDragState.startX = pos.x;
+      cropDragState.startY = pos.y;
+      cropDragState.startCropX = editorSettings.cropX;
+      cropDragState.startCropY = editorSettings.cropY;
+      cropDragState.startCropW = editorSettings.cropW;
+      cropDragState.startCropH = editorSettings.cropH;
+
+      // Determine if we're resizing (clicked on handle) or moving
+      if (target.classList.contains('crop-handle')) {
+        cropDragState.mode = 'resize-' + target.dataset.handle;
+        document.body.style.cursor = target.style.cursor;
+      } else {
+        cropDragState.mode = 'move';
+        document.body.style.cursor = 'move';
+      }
     }
 
-    function doCropDrag(e) {
-      if (!isDragging) return;
+    function doCropInteraction(e) {
+      if (!cropDragState.isDragging) return;
       e.preventDefault();
 
       const pos = getEventPos(e);
@@ -2275,29 +2302,75 @@
       const imgRect = img.getBoundingClientRect();
 
       // Calculate movement as percentage of image size
-      const deltaX = (pos.x - dragStartX) / imgRect.width;
-      const deltaY = (pos.y - dragStartY) / imgRect.height;
+      const deltaX = (pos.x - cropDragState.startX) / imgRect.width;
+      const deltaY = (pos.y - cropDragState.startY) / imgRect.height;
 
-      // Update crop position - drag the crop area directly (intuitive direction)
-      const maxOffset = 1 - editorSettings.cropW;
-      editorSettings.cropX = Math.max(0, Math.min(maxOffset, cropStartX + deltaX));
-      editorSettings.cropY = Math.max(0, Math.min(maxOffset, cropStartY + deltaY));
+      const minSize = 0.15; // Minimum crop size (15% of image)
+
+      if (cropDragState.mode === 'move') {
+        // Move the crop area
+        const maxOffsetX = 1 - editorSettings.cropW;
+        const maxOffsetY = 1 - editorSettings.cropH;
+        editorSettings.cropX = Math.max(0, Math.min(maxOffsetX, cropDragState.startCropX + deltaX));
+        editorSettings.cropY = Math.max(0, Math.min(maxOffsetY, cropDragState.startCropY + deltaY));
+      } else {
+        // Resize from corner - maintain square aspect ratio for e-ink
+        const handle = cropDragState.mode.replace('resize-', '');
+
+        let newX = cropDragState.startCropX;
+        let newY = cropDragState.startCropY;
+        let newW = cropDragState.startCropW;
+        let newH = cropDragState.startCropH;
+
+        // Calculate resize based on which corner
+        if (handle === 'se') {
+          // Southeast - resize from bottom-right
+          newW = Math.max(minSize, Math.min(1 - newX, cropDragState.startCropW + deltaX));
+          newH = newW; // Keep square
+        } else if (handle === 'sw') {
+          // Southwest - resize from bottom-left
+          const widthDelta = -deltaX;
+          newW = Math.max(minSize, Math.min(cropDragState.startCropX + cropDragState.startCropW, cropDragState.startCropW + widthDelta));
+          newX = cropDragState.startCropX + cropDragState.startCropW - newW;
+          newH = newW;
+        } else if (handle === 'ne') {
+          // Northeast - resize from top-right
+          const heightDelta = -deltaY;
+          newW = Math.max(minSize, Math.min(1 - newX, cropDragState.startCropW + deltaX));
+          newH = newW;
+          newY = cropDragState.startCropY + cropDragState.startCropH - newH;
+        } else if (handle === 'nw') {
+          // Northwest - resize from top-left
+          const sizeDelta = Math.max(-deltaX, -deltaY);
+          newW = Math.max(minSize, cropDragState.startCropW + sizeDelta);
+          newH = newW;
+          newX = cropDragState.startCropX + cropDragState.startCropW - newW;
+          newY = cropDragState.startCropY + cropDragState.startCropH - newH;
+        }
+
+        // Constrain to image bounds
+        newX = Math.max(0, Math.min(1 - minSize, newX));
+        newY = Math.max(0, Math.min(1 - minSize, newY));
+        newW = Math.min(newW, 1 - newX);
+        newH = Math.min(newH, 1 - newY);
+
+        editorSettings.cropX = newX;
+        editorSettings.cropY = newY;
+        editorSettings.cropW = newW;
+        editorSettings.cropH = newH;
+      }
 
       updateCropOverlay();
       markEditorChange();
-
-      // Instant preview while dragging
       updateInstantPreview();
     }
 
-    function endCropDrag() {
-      if (!isDragging) return;
-      isDragging = false;
+    function endCropInteraction() {
+      if (!cropDragState.isDragging) return;
+      cropDragState.isDragging = false;
+      cropDragState.mode = null;
+      document.body.style.cursor = '';
 
-      const container = document.getElementById('sourceContainer');
-      if (container) container.style.cursor = 'grab';
-
-      // Schedule server preview for accurate dithering
       scheduleServerPreview();
     }
 
@@ -2306,6 +2379,17 @@
         return { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
       return { x: e.clientX, y: e.clientY };
+    }
+
+    function resetCrop() {
+      editorSettings.cropX = 0;
+      editorSettings.cropY = 0;
+      editorSettings.cropW = 1;
+      editorSettings.cropH = 1;
+      updateCropOverlay();
+      markEditorChange();
+      updateInstantPreview();
+      scheduleServerPreview();
     }
 
     function loadSourceImage() {
@@ -2320,13 +2404,6 @@
         updateCropOverlay();
       };
       img.src = editingImage.url;
-    }
-
-    // Legacy function for compatibility
-    function updateCrop(type) {
-      if (type === 'cropZoom') {
-        updateCropZoom();
-      }
     }
 
     function updateSliderValue(name) {
@@ -2372,9 +2449,6 @@
 
     function resetEditor() {
       resetEditorSettings();
-      // Update zoom slider UI
-      document.getElementById('cropZoomSlider').value = 100;
-      document.getElementById('cropZoomValue').textContent = '100%';
       updateCropOverlay();
       updateInstantPreview();
       scheduleServerPreview();

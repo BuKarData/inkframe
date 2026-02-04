@@ -31,6 +31,7 @@
       color: var(--text);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
     .serif { font-family: 'Cormorant Garamond', serif; }
@@ -673,6 +674,517 @@
       animation: fadeIn 0.6s ease-out forwards;
     }
 
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotateY(-5deg) rotateX(5deg); }
+      50% { transform: translateY(-15px) rotateY(-5deg) rotateX(5deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .scroll-reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Product Showcase */
+    .product-showcase {
+      padding: 6rem 1rem;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .product-showcase { padding: 8rem 2rem; }
+    }
+
+    .showcase-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    @media (min-width: 768px) {
+      .showcase-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+      }
+    }
+
+    .showcase-visual {
+      perspective: 1000px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .showcase-frame {
+      width: 300px;
+      height: 300px;
+      background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow:
+        0 50px 100px -20px rgba(0,0,0,0.25),
+        0 30px 60px -30px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      transform-style: preserve-3d;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @media (min-width: 768px) {
+      .showcase-frame { width: 360px; height: 360px; }
+    }
+
+    .showcase-screen {
+      width: 100%;
+      height: 100%;
+      background: #f5f5f0;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .showcase-screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .showcase-eink-content {
+      width: 100%;
+      height: 100%;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .showcase-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #1a1a1a;
+    }
+
+    .showcase-date {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #1a1a1a;
+    }
+
+    .showcase-weather {
+      text-align: right;
+      font-size: 0.75rem;
+      color: #1a1a1a;
+    }
+
+    .showcase-weather-temp {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .showcase-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 0.7rem;
+      color: #1a1a1a;
+    }
+
+    .showcase-section-title {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 2px;
+      margin-bottom: 4px;
+    }
+
+    .showcase-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .showcase-checkbox {
+      width: 10px;
+      height: 10px;
+      border: 1.5px solid #1a1a1a;
+      flex-shrink: 0;
+    }
+
+    .showcase-glow {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(0,0,0,0.05) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .showcase-content {
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      .showcase-content { text-align: left; }
+    }
+
+    .showcase-badge {
+      display: inline-block;
+      background: var(--text);
+      color: white;
+      padding: 0.375rem 0.75rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .showcase-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    @media (min-width: 768px) {
+      .showcase-title { font-size: 2.5rem; }
+    }
+
+    .showcase-desc {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      line-height: 1.7;
+    }
+
+    .showcase-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    @media (min-width: 768px) {
+      .showcase-features { justify-content: flex-start; }
+    }
+
+    .showcase-feature {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-secondary);
+      padding: 0.5rem 0.875rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .showcase-feature svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Stats Section */
+    .stats-section {
+      padding: 4rem 1rem;
+      background: var(--text);
+      color: white;
+    }
+
+    @media (min-width: 768px) {
+      .stats-section { padding: 5rem 2rem; }
+    }
+
+    .stats-grid {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .stat-number { font-size: 3rem; }
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Enhanced Footer */
+    .footer {
+      padding: 4rem 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    @media (min-width: 768px) {
+      .footer { padding: 5rem 2rem 2rem; }
+    }
+
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer-main {
+      display: grid;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (min-width: 768px) {
+      .footer-main {
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 3rem;
+      }
+    }
+
+    .footer-brand {
+      max-width: 280px;
+    }
+
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .footer-tagline {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .footer-column h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    .footer-links {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    .footer-bottom {
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      .footer-bottom {
+        flex-direction: row;
+        justify-content: space-between;
+        text-align: left;
+      }
+    }
+
+    .footer-copyright {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .footer-legal {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .footer-legal a {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-legal a:hover {
+      color: var(--text);
+    }
+
+    /* Legal Modal */
+    .legal-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .legal-modal.active {
+      display: flex;
+    }
+
+    .legal-content {
+      background: var(--surface);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .legal-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+    }
+
+    .legal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .legal-close {
+      width: 36px;
+      height: 36px;
+      background: var(--bg);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .legal-close:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .legal-body {
+      padding: 2rem;
+    }
+
+    .legal-body h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    .legal-body h3:first-child {
+      margin-top: 0;
+    }
+
+    .legal-body p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      line-height: 1.7;
+    }
+
+    .legal-body ul {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      padding-left: 1.5rem;
+    }
+
+    .legal-body li {
+      margin-bottom: 0.5rem;
+      line-height: 1.6;
+    }
+
+    .legal-updated {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
     /* Hidden */
     .hidden { display: none !important; }
   </style>
@@ -683,6 +1195,7 @@
     <div class="nav-container">
       <a href="/" class="nav-logo">InkFrame</a>
       <div class="nav-links">
+        <a href="#product" class="nav-link" data-i18n="footer.showcase">Showcase</a>
         <a href="#features" class="nav-link" data-i18n="nav.features">Features</a>
         <a href="#how-it-works" class="nav-link" data-i18n="nav.howItWorks">How it works</a>
       </div>
@@ -701,7 +1214,7 @@
         <p class="hero-subtitle" data-i18n="hero.subtitle">Weather, calendar, tasks, and your photos - all on a beautiful, energy-efficient display that looks like paper.</p>
         <div class="hero-cta">
           <button class="btn btn-primary btn-lg" onclick="openModal('register')" data-i18n="hero.cta">Get Started</button>
-          <a href="#features" class="btn btn-outline btn-lg" data-i18n="hero.learn">Learn More</a>
+          <a href="#product" class="btn btn-outline btn-lg" data-i18n="hero.learn">Learn More</a>
         </div>
       </div>
       <div class="hero-image animate-fade-in" style="animation-delay: 0.2s">
@@ -729,6 +1242,82 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Showcase -->
+  <section id="product" class="product-showcase">
+    <div class="showcase-container">
+      <div class="showcase-visual scroll-reveal">
+        <div class="showcase-glow"></div>
+        <div class="showcase-frame">
+          <div class="showcase-screen">
+            <div class="showcase-eink-content">
+              <div class="showcase-header">
+                <div class="showcase-date" id="showcaseDate">04</div>
+                <div class="showcase-weather">
+                  <div class="showcase-weather-temp">12°C</div>
+                  <div id="showcaseWeather">Cloudy</div>
+                </div>
+              </div>
+              <div class="showcase-body">
+                <div>
+                  <div class="showcase-section-title" id="showcaseEventsTitle">Today's Events</div>
+                  <div class="showcase-item" id="showcaseEvent1">10:00 - Doctor appointment</div>
+                  <div class="showcase-item" id="showcaseEvent2">15:00 - Coffee with Anna</div>
+                </div>
+                <div>
+                  <div class="showcase-section-title" id="showcaseTasksTitle">Tasks</div>
+                  <div class="showcase-item"><div class="showcase-checkbox"></div> <span id="showcaseTask1">Buy groceries</span></div>
+                  <div class="showcase-item"><div class="showcase-checkbox"></div> <span id="showcaseTask2">Reply to emails</span></div>
+                  <div class="showcase-item"><div class="showcase-checkbox"></div> <span id="showcaseTask3">Pay bills</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="showcase-content scroll-reveal">
+        <span class="showcase-badge" data-i18n="showcase.badge">Premium E-ink</span>
+        <h2 class="showcase-title" data-i18n="showcase.title">Designed for Your Daily Life</h2>
+        <p class="showcase-desc" data-i18n="showcase.desc">InkFrame combines elegant design with practical functionality. The paper-like E-ink display is easy on your eyes and uses almost no power, making it perfect for always-on information.</p>
+        <div class="showcase-features">
+          <span class="showcase-feature">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span data-i18n="showcase.feature1">Ultra Low Power</span>
+          </span>
+          <span class="showcase-feature">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span data-i18n="showcase.feature2">Always On</span>
+          </span>
+          <span class="showcase-feature">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span data-i18n="showcase.feature3">Eye Friendly</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-item scroll-reveal">
+        <div class="stat-number">200×200</div>
+        <div class="stat-label" data-i18n="stats.resolution">Pixel Resolution</div>
+      </div>
+      <div class="stat-item scroll-reveal" style="transition-delay: 0.1s">
+        <div class="stat-number">30+</div>
+        <div class="stat-label" data-i18n="stats.battery">Days Battery</div>
+      </div>
+      <div class="stat-item scroll-reveal" style="transition-delay: 0.2s">
+        <div class="stat-number">∞</div>
+        <div class="stat-label" data-i18n="stats.photos">Photo Storage</div>
+      </div>
+      <div class="stat-item scroll-reveal" style="transition-delay: 0.3s">
+        <div class="stat-number">5</div>
+        <div class="stat-label" data-i18n="stats.languages">Languages</div>
       </div>
     </div>
   </section>
@@ -847,9 +1436,42 @@
 
   <!-- Footer -->
   <footer class="footer">
-    <div class="container">
-      <div class="footer-logo">InkFrame</div>
-      <p class="footer-text">E-ink Smart Display System</p>
+    <div class="footer-container">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <div class="footer-logo">InkFrame</div>
+          <p class="footer-tagline" data-i18n="footer.tagline">The elegant E-ink smart display that keeps you informed without distractions.</p>
+        </div>
+        <div class="footer-column">
+          <h4 data-i18n="footer.product">Product</h4>
+          <ul class="footer-links">
+            <li><a href="#features" data-i18n="footer.features">Features</a></li>
+            <li><a href="#how-it-works" data-i18n="footer.howItWorks">How it works</a></li>
+            <li><a href="#product" data-i18n="footer.showcase">Showcase</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4 data-i18n="footer.legal">Legal</h4>
+          <ul class="footer-links">
+            <li><a href="#" onclick="openLegalModal('privacy'); return false;" data-i18n="footer.privacy">Privacy Policy</a></li>
+            <li><a href="#" onclick="openLegalModal('terms'); return false;" data-i18n="footer.terms">Terms of Service</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4 data-i18n="footer.account">Account</h4>
+          <ul class="footer-links">
+            <li><a href="#" onclick="openModal('login'); return false;" data-i18n="footer.login">Log in</a></li>
+            <li><a href="#" onclick="openModal('register'); return false;" data-i18n="footer.register">Sign up</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copyright">© 2026 InkFrame. <span data-i18n="footer.rights">All rights reserved.</span></p>
+        <div class="footer-legal">
+          <a href="#" onclick="openLegalModal('privacy'); return false;" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="#" onclick="openLegalModal('terms'); return false;" data-i18n="footer.terms">Terms of Service</a>
+        </div>
+      </div>
     </div>
   </footer>
 
@@ -899,6 +1521,40 @@
     </div>
   </div>
 
+  <!-- Privacy Policy Modal -->
+  <div class="legal-modal" id="privacyModal">
+    <div class="legal-content">
+      <div class="legal-header">
+        <h3 class="legal-title" data-i18n="legal.privacy.title">Privacy Policy</h3>
+        <button class="legal-close" onclick="closeLegalModal('privacy')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="legal-body" id="privacyContent">
+        <!-- Content populated by JavaScript based on language -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Terms of Service Modal -->
+  <div class="legal-modal" id="termsModal">
+    <div class="legal-content">
+      <div class="legal-header">
+        <h3 class="legal-title" data-i18n="legal.terms.title">Terms of Service</h3>
+        <button class="legal-close" onclick="closeLegalModal('terms')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="legal-body" id="termsContent">
+        <!-- Content populated by JavaScript based on language -->
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_BASE = window.location.origin + '/api';
     let authMode = 'login';
@@ -908,6 +1564,8 @@
       en: {
         nav: { features: 'Features', howItWorks: 'How it works', login: 'Log in', register: 'Sign up' },
         hero: { title: 'Elegant E-ink Display for Your Space', subtitle: 'Weather, calendar, tasks, and your photos - all on a beautiful, energy-efficient display that looks like paper.', cta: 'Get Started', learn: 'Learn More' },
+        showcase: { badge: 'Premium E-ink', title: 'Designed for Your Daily Life', desc: 'InkFrame combines elegant design with practical functionality. The paper-like E-ink display is easy on your eyes and uses almost no power, making it perfect for always-on information.', feature1: 'Ultra Low Power', feature2: 'Always On', feature3: 'Eye Friendly', weather: 'Cloudy', eventsTitle: "Today's Events", tasksTitle: 'Tasks', event1: '10:00 - Doctor appointment', event2: '15:00 - Coffee with Anna', task1: 'Buy groceries', task2: 'Reply to emails', task3: 'Pay bills' },
+        stats: { resolution: 'Pixel Resolution', battery: 'Days Battery', photos: 'Photo Storage', languages: 'Languages' },
         features: { title: 'Everything You Need', subtitle: 'A smart display that keeps you informed without distractions.',
           photos: { title: 'Photo Gallery', desc: 'Display your favorite photos with professional dithering algorithms optimized for E-ink.' },
           weather: { title: 'Live Weather', desc: 'Current temperature and conditions updated automatically for your location.' },
@@ -922,12 +1580,38 @@
           step3: { title: 'Customize', desc: 'Upload photos, connect your calendar, and personalize your dashboard.' }
         },
         cta: { title: 'Ready to Get Started?', subtitle: 'Create your free account and start customizing your InkFrame today.', button: 'Create Account' },
+        footer: { tagline: 'The elegant E-ink smart display that keeps you informed without distractions.', product: 'Product', features: 'Features', howItWorks: 'How it works', showcase: 'Showcase', legal: 'Legal', privacy: 'Privacy Policy', terms: 'Terms of Service', account: 'Account', login: 'Log in', register: 'Sign up', rights: 'All rights reserved.' },
         auth: { name: 'Name', email: 'Email', password: 'Password', login: 'Log in', register: 'Sign up', noAccount: "Don't have an account?", hasAccount: 'Already have an account?', signUp: 'Sign up', signIn: 'Log in' },
-        mockup: { day: 'MON', month: 'FEB 2026', events: 'EVENTS', tasks: 'TASKS', event1: '09:00 Team meeting', event2: '14:30 Project presentation', task1: 'Send report', task2: 'Order books', task3: 'Call client' }
+        mockup: { day: 'MON', month: 'FEB 2026', events: 'EVENTS', tasks: 'TASKS', event1: '09:00 Team meeting', event2: '14:30 Project presentation', task1: 'Send report', task2: 'Order books', task3: 'Call client' },
+        legal: {
+          privacy: { title: 'Privacy Policy', updated: 'Last updated: February 2026',
+            intro: { title: 'Introduction', text: 'InkFrame ("we", "our", or "us") respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, use, and safeguard your information when you use our service.' },
+            collect: { title: 'Information We Collect', text: 'We collect the following types of information:', items: ['Account information (email, name, password hash)', 'Device information (device ID, WiFi connection data)', 'Content you upload (photos, calendar events, tasks)', 'Usage data (display preferences, feature usage)'] },
+            use: { title: 'How We Use Your Information', text: 'We use your information to:', items: ['Provide and maintain our service', 'Display your content on your InkFrame device', 'Improve and personalize your experience', 'Communicate with you about service updates'] },
+            share: { title: 'Information Sharing', text: 'We do not sell your personal information. We may share data only with service providers who assist in operating our service, or when required by law.' },
+            security: { title: 'Data Security', text: 'We implement appropriate security measures to protect your data. However, no method of transmission over the Internet is 100% secure.' },
+            rights: { title: 'Your Rights', text: 'You have the right to access, correct, or delete your personal data. You can manage your data through your account settings or contact us directly.' },
+            contact: { title: 'Contact Us', text: 'If you have questions about this privacy policy, please contact us at privacy@inkframe.io' }
+          },
+          terms: { title: 'Terms of Service', updated: 'Last updated: February 2026',
+            intro: { title: 'Agreement to Terms', text: 'By accessing or using InkFrame, you agree to be bound by these Terms of Service. If you do not agree, please do not use our service.' },
+            service: { title: 'Description of Service', text: 'InkFrame provides a smart E-ink display system that connects to our cloud service to display weather, calendar, tasks, and photos. The service requires both hardware (InkFrame device) and an active account.' },
+            account: { title: 'User Accounts', text: 'You are responsible for maintaining the security of your account and all activities under it. You must provide accurate information and keep it updated.' },
+            content: { title: 'User Content', text: 'You retain ownership of content you upload. By uploading content, you grant us a license to display it on your device. You are responsible for ensuring you have rights to any content you upload.' },
+            acceptable: { title: 'Acceptable Use', text: 'You agree not to:', items: ['Use the service for illegal purposes', 'Upload harmful, offensive, or infringing content', 'Attempt to access other users\' accounts or data', 'Reverse engineer or tamper with the service'] },
+            termination: { title: 'Termination', text: 'We may suspend or terminate your account if you violate these terms. You may delete your account at any time through account settings.' },
+            disclaimer: { title: 'Disclaimer', text: 'The service is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error-free operation.' },
+            liability: { title: 'Limitation of Liability', text: 'To the maximum extent permitted by law, InkFrame shall not be liable for any indirect, incidental, or consequential damages arising from your use of the service.' },
+            changes: { title: 'Changes to Terms', text: 'We may update these terms from time to time. Continued use of the service after changes constitutes acceptance of the new terms.' },
+            contact: { title: 'Contact', text: 'For questions about these terms, contact us at legal@inkframe.io' }
+          }
+        }
       },
       pl: {
         nav: { features: 'Funkcje', howItWorks: 'Jak to działa', login: 'Zaloguj', register: 'Rejestracja' },
         hero: { title: 'Elegancki wyświetlacz E-ink dla Twojej przestrzeni', subtitle: 'Pogoda, kalendarz, zadania i Twoje zdjęcia - wszystko na pięknym, energooszczędnym wyświetlaczu wyglądającym jak papier.', cta: 'Rozpocznij', learn: 'Dowiedz się więcej' },
+        showcase: { badge: 'Premium E-ink', title: 'Zaprojektowany dla Twojego codziennego życia', desc: 'InkFrame łączy elegancki design z praktyczną funkcjonalnością. Wyświetlacz E-ink przypominający papier jest przyjazny dla oczu i zużywa prawie zero energii.', feature1: 'Niskie zużycie', feature2: 'Zawsze włączony', feature3: 'Przyjazny oczom', weather: 'Pochmurno', eventsTitle: 'Dzisiejsze wydarzenia', tasksTitle: 'Zadania', event1: '10:00 - Wizyta u lekarza', event2: '15:00 - Kawa z Anią', task1: 'Kupić zakupy', task2: 'Odpisać na maile', task3: 'Zapłacić rachunki' },
+        stats: { resolution: 'Rozdzielczość', battery: 'Dni baterii', photos: 'Pamięć na zdjęcia', languages: 'Języków' },
         features: { title: 'Wszystko czego potrzebujesz', subtitle: 'Inteligentny wyświetlacz, który informuje bez rozpraszania.',
           photos: { title: 'Galeria zdjęć', desc: 'Wyświetlaj ulubione zdjęcia z profesjonalnymi algorytmami ditheringu zoptymalizowanymi dla E-ink.' },
           weather: { title: 'Pogoda na żywo', desc: 'Aktualna temperatura i warunki pogodowe aktualizowane automatycznie dla Twojej lokalizacji.' },
@@ -942,68 +1626,170 @@
           step3: { title: 'Dostosuj', desc: 'Dodaj zdjęcia, połącz kalendarz i spersonalizuj dashboard.' }
         },
         cta: { title: 'Gotowy do rozpoczęcia?', subtitle: 'Utwórz darmowe konto i zacznij dostosowywać swój InkFrame już dziś.', button: 'Utwórz konto' },
+        footer: { tagline: 'Elegancki wyświetlacz E-ink, który informuje bez rozpraszania.', product: 'Produkt', features: 'Funkcje', howItWorks: 'Jak to działa', showcase: 'Prezentacja', legal: 'Prawne', privacy: 'Polityka prywatności', terms: 'Regulamin', account: 'Konto', login: 'Zaloguj', register: 'Rejestracja', rights: 'Wszelkie prawa zastrzeżone.' },
         auth: { name: 'Imię', email: 'Email', password: 'Hasło', login: 'Zaloguj', register: 'Zarejestruj', noAccount: 'Nie masz konta?', hasAccount: 'Masz już konto?', signUp: 'Zarejestruj się', signIn: 'Zaloguj się' },
-        mockup: { day: 'PON', month: 'LUT 2026', events: 'WYDARZENIA', tasks: 'ZADANIA', event1: '09:00 Spotkanie zespołu', event2: '14:30 Prezentacja projektu', task1: 'Wysłać raport', task2: 'Zamówić książki', task3: 'Zadzwonić do klienta' }
+        mockup: { day: 'PON', month: 'LUT 2026', events: 'WYDARZENIA', tasks: 'ZADANIA', event1: '09:00 Spotkanie zespołu', event2: '14:30 Prezentacja projektu', task1: 'Wysłać raport', task2: 'Zamówić książki', task3: 'Zadzwonić do klienta' },
+        legal: {
+          privacy: { title: 'Polityka Prywatności', updated: 'Ostatnia aktualizacja: Luty 2026',
+            intro: { title: 'Wprowadzenie', text: 'InkFrame ("my", "nasz" lub "nas") szanuje Twoją prywatność i zobowiązuje się do ochrony Twoich danych osobowych. Niniejsza polityka prywatności wyjaśnia, jak zbieramy, wykorzystujemy i chronimy Twoje informacje.' },
+            collect: { title: 'Zbierane informacje', text: 'Zbieramy następujące rodzaje informacji:', items: ['Dane konta (email, imię, hash hasła)', 'Informacje o urządzeniu (ID urządzenia, dane połączenia WiFi)', 'Treści które przesyłasz (zdjęcia, wydarzenia kalendarzowe, zadania)', 'Dane użytkowania (preferencje wyświetlania, wykorzystanie funkcji)'] },
+            use: { title: 'Jak wykorzystujemy Twoje dane', text: 'Wykorzystujemy Twoje informacje do:', items: ['Świadczenia i utrzymania naszej usługi', 'Wyświetlania Twoich treści na urządzeniu InkFrame', 'Ulepszania i personalizacji Twojego doświadczenia', 'Komunikacji z Tobą o aktualizacjach usługi'] },
+            share: { title: 'Udostępnianie informacji', text: 'Nie sprzedajemy Twoich danych osobowych. Możemy udostępniać dane tylko dostawcom usług pomagającym w prowadzeniu naszej usługi lub gdy wymaga tego prawo.' },
+            security: { title: 'Bezpieczeństwo danych', text: 'Wdrażamy odpowiednie środki bezpieczeństwa w celu ochrony Twoich danych. Jednak żadna metoda transmisji przez Internet nie jest w 100% bezpieczna.' },
+            rights: { title: 'Twoje prawa', text: 'Masz prawo do dostępu, poprawiania lub usunięcia swoich danych osobowych. Możesz zarządzać swoimi danymi w ustawieniach konta lub skontaktować się z nami bezpośrednio.' },
+            contact: { title: 'Kontakt', text: 'Jeśli masz pytania dotyczące tej polityki prywatności, skontaktuj się z nami: privacy@inkframe.io' }
+          },
+          terms: { title: 'Regulamin', updated: 'Ostatnia aktualizacja: Luty 2026',
+            intro: { title: 'Akceptacja warunków', text: 'Korzystając z InkFrame, zgadzasz się na przestrzeganie niniejszego Regulaminu. Jeśli się nie zgadzasz, prosimy o niekorzystanie z naszej usługi.' },
+            service: { title: 'Opis usługi', text: 'InkFrame zapewnia inteligentny system wyświetlacza E-ink, który łączy się z naszą usługą chmurową, aby wyświetlać pogodę, kalendarz, zadania i zdjęcia. Usługa wymaga zarówno sprzętu (urządzenia InkFrame), jak i aktywnego konta.' },
+            account: { title: 'Konta użytkowników', text: 'Jesteś odpowiedzialny za utrzymanie bezpieczeństwa swojego konta i wszystkich działań na nim. Musisz podać dokładne informacje i aktualizować je.' },
+            content: { title: 'Treści użytkownika', text: 'Zachowujesz własność treści, które przesyłasz. Przesyłając treści, udzielasz nam licencji na wyświetlanie ich na Twoim urządzeniu. Odpowiadasz za upewnienie się, że masz prawa do przesyłanych treści.' },
+            acceptable: { title: 'Dopuszczalne użytkowanie', text: 'Zgadzasz się nie:', items: ['Używać usługi do celów nielegalnych', 'Przesyłać szkodliwych, obraźliwych lub naruszających prawa treści', 'Próbować uzyskać dostęp do kont lub danych innych użytkowników', 'Dokonywać inżynierii wstecznej lub manipulować usługą'] },
+            termination: { title: 'Rozwiązanie', text: 'Możemy zawiesić lub zamknąć Twoje konto, jeśli naruszysz te warunki. Możesz usunąć swoje konto w dowolnym momencie w ustawieniach konta.' },
+            disclaimer: { title: 'Wyłączenie odpowiedzialności', text: 'Usługa jest świadczona "tak jak jest" bez jakichkolwiek gwarancji. Nie gwarantujemy nieprzerwanego lub wolnego od błędów działania.' },
+            liability: { title: 'Ograniczenie odpowiedzialności', text: 'W maksymalnym zakresie dozwolonym przez prawo, InkFrame nie ponosi odpowiedzialności za żadne pośrednie, przypadkowe lub wtórne szkody wynikające z korzystania z usługi.' },
+            changes: { title: 'Zmiany warunków', text: 'Możemy od czasu do czasu aktualizować te warunki. Dalsze korzystanie z usługi po zmianach oznacza akceptację nowych warunków.' },
+            contact: { title: 'Kontakt', text: 'W razie pytań dotyczących regulaminu, skontaktuj się z nami: legal@inkframe.io' }
+          }
+        }
       },
       de: {
         nav: { features: 'Funktionen', howItWorks: 'So funktioniert es', login: 'Anmelden', register: 'Registrieren' },
-        hero: { title: 'Elegantes E-Ink Display fur Ihren Raum', subtitle: 'Wetter, Kalender, Aufgaben und Ihre Fotos - alles auf einem schonen, energieeffizienten Display, das wie Papier aussieht.', cta: 'Loslegen', learn: 'Mehr erfahren' },
+        hero: { title: 'Elegantes E-Ink Display für Ihren Raum', subtitle: 'Wetter, Kalender, Aufgaben und Ihre Fotos - alles auf einem schönen, energieeffizienten Display, das wie Papier aussieht.', cta: 'Loslegen', learn: 'Mehr erfahren' },
+        showcase: { badge: 'Premium E-ink', title: 'Für Ihren Alltag entwickelt', desc: 'InkFrame kombiniert elegantes Design mit praktischer Funktionalität. Das papierähnliche E-ink-Display ist augenschonend und verbraucht fast keinen Strom.', feature1: 'Niedriger Verbrauch', feature2: 'Immer an', feature3: 'Augenschonend', weather: 'Bewölkt', eventsTitle: 'Heutige Termine', tasksTitle: 'Aufgaben', event1: '10:00 - Arzttermin', event2: '15:00 - Kaffee mit Anna', task1: 'Einkaufen gehen', task2: 'E-Mails beantworten', task3: 'Rechnungen bezahlen' },
+        stats: { resolution: 'Pixel-Auflösung', battery: 'Tage Akku', photos: 'Fotospeicher', languages: 'Sprachen' },
         features: { title: 'Alles was Sie brauchen', subtitle: 'Ein intelligentes Display, das Sie informiert ohne abzulenken.',
           photos: { title: 'Fotogalerie', desc: 'Zeigen Sie Ihre Lieblingsfotos mit professionellen Dithering-Algorithmen.' },
           weather: { title: 'Live-Wetter', desc: 'Aktuelle Temperatur und Wetterbedingungen automatisch aktualisiert.' },
           calendar: { title: 'Google Kalender', desc: 'Sehen Sie kommende Termine mit Google Kalender Integration.' },
-          todos: { title: 'Aufgabenlisten', desc: 'Behalten Sie Ihre Aufgaben im Uberblick.' },
-          eink: { title: 'E-Ink Display', desc: 'Papierahnliches Display, augenfreundlich und energiesparend.' },
+          todos: { title: 'Aufgabenlisten', desc: 'Behalten Sie Ihre Aufgaben im Überblick.' },
+          eink: { title: 'E-Ink Display', desc: 'Papierähnliches Display, augenfreundlich und energiesparend.' },
           carousel: { title: 'Foto-Karussell', desc: 'Automatisch durch Ihre Fotos wechseln.' }
         },
         steps: { title: 'So funktioniert es', subtitle: 'In wenigen Minuten startklar.',
-          step1: { title: 'Gerat verbinden', desc: 'InkFrame einschalten und mit WLAN verbinden.' },
-          step2: { title: 'Konto erstellen', desc: 'Registrieren und Gerat mit der angezeigten ID verbinden.' },
+          step1: { title: 'Gerät verbinden', desc: 'InkFrame einschalten und mit WLAN verbinden.' },
+          step2: { title: 'Konto erstellen', desc: 'Registrieren und Gerät mit der angezeigten ID verbinden.' },
           step3: { title: 'Anpassen', desc: 'Fotos hochladen, Kalender verbinden und personalisieren.' }
         },
         cta: { title: 'Bereit loszulegen?', subtitle: 'Erstellen Sie Ihr kostenloses Konto und personalisieren Sie Ihr InkFrame.', button: 'Konto erstellen' },
+        footer: { tagline: 'Das elegante E-ink Smart Display, das Sie informiert ohne abzulenken.', product: 'Produkt', features: 'Funktionen', howItWorks: 'So funktioniert es', showcase: 'Präsentation', legal: 'Rechtliches', privacy: 'Datenschutz', terms: 'Nutzungsbedingungen', account: 'Konto', login: 'Anmelden', register: 'Registrieren', rights: 'Alle Rechte vorbehalten.' },
         auth: { name: 'Name', email: 'E-Mail', password: 'Passwort', login: 'Anmelden', register: 'Registrieren', noAccount: 'Kein Konto?', hasAccount: 'Bereits registriert?', signUp: 'Registrieren', signIn: 'Anmelden' },
-        mockup: { day: 'MO', month: 'FEB 2026', events: 'TERMINE', tasks: 'AUFGABEN', event1: '09:00 Teambesprechung', event2: '14:30 Projektpräsentation', task1: 'Bericht senden', task2: 'Bücher bestellen', task3: 'Kunden anrufen' }
+        mockup: { day: 'MO', month: 'FEB 2026', events: 'TERMINE', tasks: 'AUFGABEN', event1: '09:00 Teambesprechung', event2: '14:30 Projektpräsentation', task1: 'Bericht senden', task2: 'Bücher bestellen', task3: 'Kunden anrufen' },
+        legal: {
+          privacy: { title: 'Datenschutzerklärung', updated: 'Zuletzt aktualisiert: Februar 2026',
+            intro: { title: 'Einführung', text: 'InkFrame ("wir", "unser" oder "uns") respektiert Ihre Privatsphäre und verpflichtet sich zum Schutz Ihrer persönlichen Daten. Diese Datenschutzerklärung erklärt, wie wir Ihre Informationen sammeln, verwenden und schützen.' },
+            collect: { title: 'Gesammelte Informationen', text: 'Wir sammeln folgende Arten von Informationen:', items: ['Kontoinformationen (E-Mail, Name, Passwort-Hash)', 'Geräteinformationen (Geräte-ID, WLAN-Verbindungsdaten)', 'Von Ihnen hochgeladene Inhalte (Fotos, Kalendereinträge, Aufgaben)', 'Nutzungsdaten (Anzeigeeinstellungen, Funktionsnutzung)'] },
+            use: { title: 'Verwendung Ihrer Daten', text: 'Wir verwenden Ihre Informationen um:', items: ['Unseren Service bereitzustellen und zu pflegen', 'Ihre Inhalte auf Ihrem InkFrame-Gerät anzuzeigen', 'Ihre Erfahrung zu verbessern und zu personalisieren', 'Mit Ihnen über Service-Updates zu kommunizieren'] },
+            share: { title: 'Informationsweitergabe', text: 'Wir verkaufen Ihre persönlichen Daten nicht. Wir teilen Daten nur mit Dienstleistern, die uns bei der Bereitstellung unseres Services unterstützen, oder wenn es gesetzlich erforderlich ist.' },
+            security: { title: 'Datensicherheit', text: 'Wir implementieren angemessene Sicherheitsmaßnahmen zum Schutz Ihrer Daten. Jedoch ist keine Übertragungsmethode über das Internet 100% sicher.' },
+            rights: { title: 'Ihre Rechte', text: 'Sie haben das Recht auf Zugang, Berichtigung oder Löschung Ihrer persönlichen Daten. Sie können Ihre Daten über die Kontoeinstellungen verwalten oder uns direkt kontaktieren.' },
+            contact: { title: 'Kontakt', text: 'Bei Fragen zu dieser Datenschutzerklärung kontaktieren Sie uns unter: privacy@inkframe.io' }
+          },
+          terms: { title: 'Nutzungsbedingungen', updated: 'Zuletzt aktualisiert: Februar 2026',
+            intro: { title: 'Zustimmung zu den Bedingungen', text: 'Durch den Zugriff auf oder die Nutzung von InkFrame stimmen Sie diesen Nutzungsbedingungen zu. Wenn Sie nicht einverstanden sind, nutzen Sie unseren Service bitte nicht.' },
+            service: { title: 'Servicebeschreibung', text: 'InkFrame bietet ein intelligentes E-ink-Displaysystem, das sich mit unserem Cloud-Service verbindet, um Wetter, Kalender, Aufgaben und Fotos anzuzeigen. Der Service erfordert sowohl Hardware (InkFrame-Gerät) als auch ein aktives Konto.' },
+            account: { title: 'Benutzerkonten', text: 'Sie sind für die Sicherheit Ihres Kontos und alle Aktivitäten darunter verantwortlich. Sie müssen korrekte Informationen angeben und diese aktuell halten.' },
+            content: { title: 'Benutzerinhalte', text: 'Sie behalten das Eigentum an hochgeladenen Inhalten. Durch das Hochladen gewähren Sie uns eine Lizenz zur Anzeige auf Ihrem Gerät. Sie sind dafür verantwortlich, dass Sie die Rechte an allen hochgeladenen Inhalten haben.' },
+            acceptable: { title: 'Akzeptable Nutzung', text: 'Sie stimmen zu, nicht:', items: ['Den Service für illegale Zwecke zu nutzen', 'Schädliche, anstößige oder rechtsverletzende Inhalte hochzuladen', 'Zu versuchen, auf Konten oder Daten anderer Nutzer zuzugreifen', 'Den Service zurückzuentwickeln oder zu manipulieren'] },
+            termination: { title: 'Kündigung', text: 'Wir können Ihr Konto sperren oder kündigen, wenn Sie diese Bedingungen verletzen. Sie können Ihr Konto jederzeit in den Kontoeinstellungen löschen.' },
+            disclaimer: { title: 'Haftungsausschluss', text: 'Der Service wird "wie besehen" ohne jegliche Garantien bereitgestellt. Wir garantieren keinen unterbrechungsfreien oder fehlerfreien Betrieb.' },
+            liability: { title: 'Haftungsbeschränkung', text: 'Im maximal gesetzlich zulässigen Umfang haftet InkFrame nicht für indirekte, zufällige oder Folgeschäden, die aus Ihrer Nutzung des Services entstehen.' },
+            changes: { title: 'Änderungen der Bedingungen', text: 'Wir können diese Bedingungen von Zeit zu Zeit aktualisieren. Die fortgesetzte Nutzung des Services nach Änderungen gilt als Akzeptanz der neuen Bedingungen.' },
+            contact: { title: 'Kontakt', text: 'Bei Fragen zu diesen Bedingungen kontaktieren Sie uns unter: legal@inkframe.io' }
+          }
+        }
       },
       fr: {
-        nav: { features: 'Fonctionnalites', howItWorks: 'Comment ca marche', login: 'Connexion', register: 'Inscription' },
-        hero: { title: 'Ecran E-ink elegant pour votre espace', subtitle: 'Meteo, calendrier, taches et vos photos - le tout sur un ecran elegant et economique qui ressemble a du papier.', cta: 'Commencer', learn: 'En savoir plus' },
-        features: { title: 'Tout ce dont vous avez besoin', subtitle: 'Un ecran intelligent qui vous informe sans distractions.',
-          photos: { title: 'Galerie photos', desc: 'Affichez vos photos preferees avec des algorithmes de tramage professionnels.' },
-          weather: { title: 'Meteo en direct', desc: 'Temperature et conditions actuelles mises a jour automatiquement.' },
-          calendar: { title: 'Google Agenda', desc: 'Voyez vos evenements a venir avec integration Google Agenda.' },
-          todos: { title: 'Listes de taches', desc: 'Suivez vos taches avec une liste claire.' },
-          eink: { title: 'Ecran E-ink', desc: 'Ecran type papier, facile pour les yeux et econome en energie.' },
-          carousel: { title: 'Carrousel photos', desc: 'Faites defiler automatiquement vos photos.' }
+        nav: { features: 'Fonctionnalités', howItWorks: 'Comment ça marche', login: 'Connexion', register: 'Inscription' },
+        hero: { title: 'Écran E-ink élégant pour votre espace', subtitle: 'Météo, calendrier, tâches et vos photos - le tout sur un écran élégant et économique qui ressemble à du papier.', cta: 'Commencer', learn: 'En savoir plus' },
+        showcase: { badge: 'E-ink Premium', title: 'Conçu pour votre vie quotidienne', desc: "InkFrame combine un design élégant avec une fonctionnalité pratique. L'écran E-ink type papier est agréable pour les yeux et ne consomme presque pas d'énergie.", feature1: 'Basse consommation', feature2: 'Toujours allumé', feature3: 'Confort visuel', weather: 'Nuageux', eventsTitle: "Événements d'aujourd'hui", tasksTitle: 'Tâches', event1: '10:00 - Rendez-vous médecin', event2: '15:00 - Café avec Anna', task1: 'Faire les courses', task2: 'Répondre aux emails', task3: 'Payer les factures' },
+        stats: { resolution: 'Résolution pixels', battery: 'Jours batterie', photos: 'Stockage photos', languages: 'Langues' },
+        features: { title: 'Tout ce dont vous avez besoin', subtitle: 'Un écran intelligent qui vous informe sans distractions.',
+          photos: { title: 'Galerie photos', desc: 'Affichez vos photos préférées avec des algorithmes de tramage professionnels.' },
+          weather: { title: 'Météo en direct', desc: 'Température et conditions actuelles mises à jour automatiquement.' },
+          calendar: { title: 'Google Agenda', desc: 'Voyez vos événements à venir avec intégration Google Agenda.' },
+          todos: { title: 'Listes de tâches', desc: 'Suivez vos tâches avec une liste claire.' },
+          eink: { title: 'Écran E-ink', desc: "Écran type papier, facile pour les yeux et économe en énergie." },
+          carousel: { title: 'Carrousel photos', desc: 'Faites défiler automatiquement vos photos.' }
         },
-        steps: { title: 'Comment ca marche', subtitle: 'Commencez en quelques minutes.',
+        steps: { title: 'Comment ça marche', subtitle: 'Commencez en quelques minutes.',
           step1: { title: 'Connectez votre appareil', desc: 'Allumez InkFrame et connectez-le au WiFi.' },
-          step2: { title: 'Creez un compte', desc: 'Inscrivez-vous et liez votre appareil avec ID affiche.' },
+          step2: { title: 'Créez un compte', desc: "Inscrivez-vous et liez votre appareil avec l'ID affiché." },
           step3: { title: 'Personnalisez', desc: 'Ajoutez des photos, connectez votre calendrier et personnalisez.' }
         },
         cta: { title: 'Prêt à commencer?', subtitle: 'Créez votre compte gratuit et personnalisez votre InkFrame.', button: 'Créer un compte' },
+        footer: { tagline: "L'écran E-ink élégant qui vous informe sans distractions.", product: 'Produit', features: 'Fonctionnalités', howItWorks: 'Comment ça marche', showcase: 'Présentation', legal: 'Légal', privacy: 'Politique de confidentialité', terms: "Conditions d'utilisation", account: 'Compte', login: 'Connexion', register: 'Inscription', rights: 'Tous droits réservés.' },
         auth: { name: 'Nom', email: 'Email', password: 'Mot de passe', login: 'Connexion', register: 'Inscription', noAccount: 'Pas de compte?', hasAccount: 'Déjà inscrit?', signUp: 'Inscription', signIn: 'Connexion' },
-        mockup: { day: 'LUN', month: 'FÉV 2026', events: 'ÉVÉNEMENTS', tasks: 'TÂCHES', event1: '09:00 Réunion d\'équipe', event2: '14:30 Présentation projet', task1: 'Envoyer rapport', task2: 'Commander livres', task3: 'Appeler client' }
+        mockup: { day: 'LUN', month: 'FÉV 2026', events: 'ÉVÉNEMENTS', tasks: 'TÂCHES', event1: "09:00 Réunion d'équipe", event2: '14:30 Présentation projet', task1: 'Envoyer rapport', task2: 'Commander livres', task3: 'Appeler client' },
+        legal: {
+          privacy: { title: 'Politique de Confidentialité', updated: 'Dernière mise à jour: Février 2026',
+            intro: { title: 'Introduction', text: 'InkFrame ("nous", "notre" ou "nos") respecte votre vie privée et s\'engage à protéger vos données personnelles. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos informations.' },
+            collect: { title: 'Informations collectées', text: 'Nous collectons les types d\'informations suivants:', items: ['Informations de compte (email, nom, hash du mot de passe)', 'Informations sur l\'appareil (ID de l\'appareil, données de connexion WiFi)', 'Contenu que vous téléchargez (photos, événements calendrier, tâches)', 'Données d\'utilisation (préférences d\'affichage, utilisation des fonctionnalités)'] },
+            use: { title: 'Utilisation de vos informations', text: 'Nous utilisons vos informations pour:', items: ['Fournir et maintenir notre service', 'Afficher votre contenu sur votre appareil InkFrame', 'Améliorer et personnaliser votre expérience', 'Communiquer avec vous sur les mises à jour du service'] },
+            share: { title: 'Partage des informations', text: 'Nous ne vendons pas vos données personnelles. Nous pouvons partager des données uniquement avec des prestataires de services qui nous aident à exploiter notre service, ou lorsque la loi l\'exige.' },
+            security: { title: 'Sécurité des données', text: 'Nous mettons en œuvre des mesures de sécurité appropriées pour protéger vos données. Cependant, aucune méthode de transmission sur Internet n\'est sécurisée à 100%.' },
+            rights: { title: 'Vos droits', text: 'Vous avez le droit d\'accéder, de corriger ou de supprimer vos données personnelles. Vous pouvez gérer vos données via les paramètres de votre compte ou nous contacter directement.' },
+            contact: { title: 'Contact', text: 'Pour toute question concernant cette politique de confidentialité, contactez-nous à: privacy@inkframe.io' }
+          },
+          terms: { title: 'Conditions d\'Utilisation', updated: 'Dernière mise à jour: Février 2026',
+            intro: { title: 'Acceptation des conditions', text: 'En accédant ou en utilisant InkFrame, vous acceptez d\'être lié par ces Conditions d\'Utilisation. Si vous n\'êtes pas d\'accord, veuillez ne pas utiliser notre service.' },
+            service: { title: 'Description du service', text: 'InkFrame fournit un système d\'affichage E-ink intelligent qui se connecte à notre service cloud pour afficher la météo, le calendrier, les tâches et les photos. Le service nécessite à la fois du matériel (appareil InkFrame) et un compte actif.' },
+            account: { title: 'Comptes utilisateurs', text: 'Vous êtes responsable du maintien de la sécurité de votre compte et de toutes les activités sous celui-ci. Vous devez fournir des informations exactes et les tenir à jour.' },
+            content: { title: 'Contenu utilisateur', text: 'Vous conservez la propriété du contenu que vous téléchargez. En téléchargeant du contenu, vous nous accordez une licence pour l\'afficher sur votre appareil. Vous êtes responsable de vous assurer que vous avez les droits sur tout contenu que vous téléchargez.' },
+            acceptable: { title: 'Utilisation acceptable', text: 'Vous acceptez de ne pas:', items: ['Utiliser le service à des fins illégales', 'Télécharger du contenu nuisible, offensant ou portant atteinte aux droits', 'Tenter d\'accéder aux comptes ou données d\'autres utilisateurs', 'Faire de l\'ingénierie inverse ou altérer le service'] },
+            termination: { title: 'Résiliation', text: 'Nous pouvons suspendre ou résilier votre compte si vous violez ces conditions. Vous pouvez supprimer votre compte à tout moment via les paramètres du compte.' },
+            disclaimer: { title: 'Avertissement', text: 'Le service est fourni "tel quel" sans garantie d\'aucune sorte. Nous ne garantissons pas un fonctionnement ininterrompu ou sans erreur.' },
+            liability: { title: 'Limitation de responsabilité', text: 'Dans toute la mesure permise par la loi, InkFrame ne sera pas responsable des dommages indirects, accessoires ou consécutifs résultant de votre utilisation du service.' },
+            changes: { title: 'Modifications des conditions', text: 'Nous pouvons mettre à jour ces conditions de temps en temps. L\'utilisation continue du service après les modifications constitue l\'acceptation des nouvelles conditions.' },
+            contact: { title: 'Contact', text: 'Pour toute question concernant ces conditions, contactez-nous à: legal@inkframe.io' }
+          }
+        }
       },
       es: {
-        nav: { features: 'Caracteristicas', howItWorks: 'Como funciona', login: 'Iniciar sesion', register: 'Registrarse' },
-        hero: { title: 'Elegante pantalla E-ink para tu espacio', subtitle: 'Clima, calendario, tareas y tus fotos - todo en una hermosa pantalla eficiente que parece papel.', cta: 'Comenzar', learn: 'Saber mas' },
+        nav: { features: 'Características', howItWorks: 'Cómo funciona', login: 'Iniciar sesión', register: 'Registrarse' },
+        hero: { title: 'Elegante pantalla E-ink para tu espacio', subtitle: 'Clima, calendario, tareas y tus fotos - todo en una hermosa pantalla eficiente que parece papel.', cta: 'Comenzar', learn: 'Saber más' },
+        showcase: { badge: 'E-ink Premium', title: 'Diseñado para tu vida diaria', desc: 'InkFrame combina diseño elegante con funcionalidad práctica. La pantalla E-ink tipo papel es cómoda para tus ojos y consume casi nada de energía.', feature1: 'Bajo consumo', feature2: 'Siempre encendido', feature3: 'Cómodo visual', weather: 'Nublado', eventsTitle: 'Eventos de hoy', tasksTitle: 'Tareas', event1: '10:00 - Cita médica', event2: '15:00 - Café con Anna', task1: 'Comprar comida', task2: 'Responder emails', task3: 'Pagar facturas' },
+        stats: { resolution: 'Resolución píxeles', battery: 'Días de batería', photos: 'Almacén de fotos', languages: 'Idiomas' },
         features: { title: 'Todo lo que necesitas', subtitle: 'Una pantalla inteligente que te informa sin distracciones.',
-          photos: { title: 'Galeria de fotos', desc: 'Muestra tus fotos favoritas con algoritmos profesionales de difuminado.' },
-          weather: { title: 'Clima en vivo', desc: 'Temperatura y condiciones actuales actualizadas automaticamente.' },
-          calendar: { title: 'Google Calendar', desc: 'Ve tus proximos eventos con integracion de Google Calendar.' },
+          photos: { title: 'Galería de fotos', desc: 'Muestra tus fotos favoritas con algoritmos profesionales de difuminado.' },
+          weather: { title: 'Clima en vivo', desc: 'Temperatura y condiciones actuales actualizadas automáticamente.' },
+          calendar: { title: 'Google Calendar', desc: 'Ve tus próximos eventos con integración de Google Calendar.' },
           todos: { title: 'Listas de tareas', desc: 'Sigue tus tareas con una lista limpia.' },
-          eink: { title: 'Pantalla E-ink', desc: 'Pantalla tipo papel, facil para los ojos y de bajo consumo.' },
-          carousel: { title: 'Carrusel de fotos', desc: 'Rota automaticamente por tus fotos.' }
+          eink: { title: 'Pantalla E-ink', desc: 'Pantalla tipo papel, fácil para los ojos y de bajo consumo.' },
+          carousel: { title: 'Carrusel de fotos', desc: 'Rota automáticamente por tus fotos.' }
         },
-        steps: { title: 'Como funciona', subtitle: 'Comienza en minutos.',
-          step1: { title: 'Conecta tu dispositivo', desc: 'Enciende InkFrame y conectalo a WiFi.' },
-          step2: { title: 'Crea una cuenta', desc: 'Registrate y vincula tu dispositivo con el ID mostrado.' },
+        steps: { title: 'Cómo funciona', subtitle: 'Comienza en minutos.',
+          step1: { title: 'Conecta tu dispositivo', desc: 'Enciende InkFrame y conéctalo a WiFi.' },
+          step2: { title: 'Crea una cuenta', desc: 'Regístrate y vincula tu dispositivo con el ID mostrado.' },
           step3: { title: 'Personaliza', desc: 'Sube fotos, conecta tu calendario y personaliza.' }
         },
         cta: { title: '¿Listo para comenzar?', subtitle: 'Crea tu cuenta gratis y personaliza tu InkFrame hoy.', button: 'Crear cuenta' },
+        footer: { tagline: 'La elegante pantalla E-ink que te informa sin distracciones.', product: 'Producto', features: 'Características', howItWorks: 'Cómo funciona', showcase: 'Presentación', legal: 'Legal', privacy: 'Política de privacidad', terms: 'Términos de servicio', account: 'Cuenta', login: 'Iniciar sesión', register: 'Registrarse', rights: 'Todos los derechos reservados.' },
         auth: { name: 'Nombre', email: 'Email', password: 'Contraseña', login: 'Iniciar sesión', register: 'Registrarse', noAccount: '¿No tienes cuenta?', hasAccount: '¿Ya tienes cuenta?', signUp: 'Registrarse', signIn: 'Iniciar sesión' },
-        mockup: { day: 'LUN', month: 'FEB 2026', events: 'EVENTOS', tasks: 'TAREAS', event1: '09:00 Reunión de equipo', event2: '14:30 Presentación proyecto', task1: 'Enviar informe', task2: 'Pedir libros', task3: 'Llamar cliente' }
+        mockup: { day: 'LUN', month: 'FEB 2026', events: 'EVENTOS', tasks: 'TAREAS', event1: '09:00 Reunión de equipo', event2: '14:30 Presentación proyecto', task1: 'Enviar informe', task2: 'Pedir libros', task3: 'Llamar cliente' },
+        legal: {
+          privacy: { title: 'Política de Privacidad', updated: 'Última actualización: Febrero 2026',
+            intro: { title: 'Introducción', text: 'InkFrame ("nosotros", "nuestro" o "nos") respeta tu privacidad y se compromete a proteger tus datos personales. Esta política de privacidad explica cómo recopilamos, usamos y protegemos tu información.' },
+            collect: { title: 'Información que recopilamos', text: 'Recopilamos los siguientes tipos de información:', items: ['Información de cuenta (email, nombre, hash de contraseña)', 'Información del dispositivo (ID del dispositivo, datos de conexión WiFi)', 'Contenido que subes (fotos, eventos del calendario, tareas)', 'Datos de uso (preferencias de visualización, uso de funciones)'] },
+            use: { title: 'Cómo usamos tu información', text: 'Usamos tu información para:', items: ['Proporcionar y mantener nuestro servicio', 'Mostrar tu contenido en tu dispositivo InkFrame', 'Mejorar y personalizar tu experiencia', 'Comunicarnos contigo sobre actualizaciones del servicio'] },
+            share: { title: 'Compartir información', text: 'No vendemos tu información personal. Solo podemos compartir datos con proveedores de servicios que nos ayudan a operar nuestro servicio, o cuando lo exige la ley.' },
+            security: { title: 'Seguridad de datos', text: 'Implementamos medidas de seguridad apropiadas para proteger tus datos. Sin embargo, ningún método de transmisión por Internet es 100% seguro.' },
+            rights: { title: 'Tus derechos', text: 'Tienes derecho a acceder, corregir o eliminar tus datos personales. Puedes gestionar tus datos a través de la configuración de tu cuenta o contactarnos directamente.' },
+            contact: { title: 'Contacto', text: 'Si tienes preguntas sobre esta política de privacidad, contáctanos en: privacy@inkframe.io' }
+          },
+          terms: { title: 'Términos de Servicio', updated: 'Última actualización: Febrero 2026',
+            intro: { title: 'Aceptación de términos', text: 'Al acceder o usar InkFrame, aceptas estar sujeto a estos Términos de Servicio. Si no estás de acuerdo, por favor no uses nuestro servicio.' },
+            service: { title: 'Descripción del servicio', text: 'InkFrame proporciona un sistema de pantalla E-ink inteligente que se conecta a nuestro servicio en la nube para mostrar clima, calendario, tareas y fotos. El servicio requiere tanto hardware (dispositivo InkFrame) como una cuenta activa.' },
+            account: { title: 'Cuentas de usuario', text: 'Eres responsable de mantener la seguridad de tu cuenta y todas las actividades bajo ella. Debes proporcionar información precisa y mantenerla actualizada.' },
+            content: { title: 'Contenido del usuario', text: 'Conservas la propiedad del contenido que subes. Al subir contenido, nos otorgas una licencia para mostrarlo en tu dispositivo. Eres responsable de asegurarte de que tienes derechos sobre cualquier contenido que subas.' },
+            acceptable: { title: 'Uso aceptable', text: 'Aceptas no:', items: ['Usar el servicio para propósitos ilegales', 'Subir contenido dañino, ofensivo o que infrinja derechos', 'Intentar acceder a cuentas o datos de otros usuarios', 'Realizar ingeniería inversa o manipular el servicio'] },
+            termination: { title: 'Terminación', text: 'Podemos suspender o terminar tu cuenta si violas estos términos. Puedes eliminar tu cuenta en cualquier momento a través de la configuración de cuenta.' },
+            disclaimer: { title: 'Descargo de responsabilidad', text: 'El servicio se proporciona "tal cual" sin garantías de ningún tipo. No garantizamos operación ininterrumpida o libre de errores.' },
+            liability: { title: 'Limitación de responsabilidad', text: 'En la máxima medida permitida por la ley, InkFrame no será responsable de daños indirectos, incidentales o consecuentes derivados de tu uso del servicio.' },
+            changes: { title: 'Cambios en los términos', text: 'Podemos actualizar estos términos de vez en cuando. El uso continuado del servicio después de los cambios constituye la aceptación de los nuevos términos.' },
+            contact: { title: 'Contacto', text: 'Para preguntas sobre estos términos, contáctanos en: legal@inkframe.io' }
+          }
+        }
       }
     };
 
@@ -1118,6 +1904,109 @@
     document.getElementById('authModal').addEventListener('click', (e) => {
       if (e.target.id === 'authModal') closeModal();
     });
+
+    // Legal modals
+    function openLegalModal(type) {
+      const modal = document.getElementById(type + 'Modal');
+      const content = document.getElementById(type + 'Content');
+      const legal = translations[currentLang]?.legal?.[type];
+
+      if (legal) {
+        let html = `<p class="legal-updated">${legal.updated}</p>`;
+
+        // Add sections
+        const sections = ['intro', 'collect', 'use', 'share', 'security', 'rights', 'service', 'account', 'content', 'acceptable', 'termination', 'disclaimer', 'liability', 'changes', 'contact'];
+
+        sections.forEach(section => {
+          if (legal[section]) {
+            html += `<h3>${legal[section].title}</h3>`;
+            html += `<p>${legal[section].text}</p>`;
+            if (legal[section].items) {
+              html += '<ul>';
+              legal[section].items.forEach(item => {
+                html += `<li>${item}</li>`;
+              });
+              html += '</ul>';
+            }
+          }
+        });
+
+        content.innerHTML = html;
+      }
+
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLegalModal(type) {
+      document.getElementById(type + 'Modal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // Close legal modals on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeLegalModal('privacy');
+        closeLegalModal('terms');
+      }
+    });
+
+    // Close legal modal on backdrop click
+    document.getElementById('privacyModal').addEventListener('click', (e) => {
+      if (e.target.id === 'privacyModal') closeLegalModal('privacy');
+    });
+    document.getElementById('termsModal').addEventListener('click', (e) => {
+      if (e.target.id === 'termsModal') closeLegalModal('terms');
+    });
+
+    // Scroll reveal animation
+    function initScrollReveal() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      });
+
+      document.querySelectorAll('.scroll-reveal').forEach(el => {
+        observer.observe(el);
+      });
+    }
+
+    // Update showcase content based on language
+    function updateShowcaseContent() {
+      const showcase = translations[currentLang]?.showcase;
+      if (showcase) {
+        const els = {
+          showcaseWeather: showcase.weather,
+          showcaseEventsTitle: showcase.eventsTitle,
+          showcaseTasksTitle: showcase.tasksTitle,
+          showcaseEvent1: showcase.event1,
+          showcaseEvent2: showcase.event2,
+          showcaseTask1: showcase.task1,
+          showcaseTask2: showcase.task2,
+          showcaseTask3: showcase.task3
+        };
+        Object.entries(els).forEach(([id, text]) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = text;
+        });
+      }
+    }
+
+    // Override applyTranslations to also update showcase
+    const originalApplyTranslations = applyTranslations;
+    applyTranslations = function() {
+      originalApplyTranslations();
+      updateShowcaseContent();
+    };
+
+    // Init scroll reveal
+    initScrollReveal();
 
     // Init language
     setLanguage(currentLang);
