@@ -120,6 +120,9 @@ async function createTables() {
   const migrations = [
     'ALTER TABLE devices ADD COLUMN IF NOT EXISTS refresh_version INTEGER DEFAULT 0',
     'ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_refresh_request TIMESTAMP',
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS display_mode TEXT DEFAULT \'dashboard\'',
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS current_image_index INTEGER DEFAULT 0',
+    'ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_user_activity TIMESTAMP',
     'ALTER TABLE images ADD COLUMN IF NOT EXISTS image_data BYTEA',
     'ALTER TABLE images ADD COLUMN IF NOT EXISTS processed_data BYTEA',
     'ALTER TABLE images ADD COLUMN IF NOT EXISTS mime_type TEXT DEFAULT \'image/png\''
@@ -249,7 +252,10 @@ async function getDevices() {
         refreshVersion: row.refresh_version || 0,
         lastRefreshRequest: row.last_refresh_request,
         registeredAt: row.registered_at,
-        lastSeen: row.last_seen
+        lastSeen: row.last_seen,
+        displayMode: row.display_mode || 'dashboard',
+        currentImageIndex: row.current_image_index || 0,
+        lastUserActivity: row.last_user_activity
       };
     });
     return devices;
@@ -287,7 +293,10 @@ async function getDeviceById(id) {
       refreshVersion: row.refresh_version || 0,
       lastRefreshRequest: row.last_refresh_request,
       registeredAt: row.registered_at,
-      lastSeen: row.last_seen
+      lastSeen: row.last_seen,
+      displayMode: row.display_mode || 'dashboard',
+      currentImageIndex: row.current_image_index || 0,
+      lastUserActivity: row.last_user_activity
     };
   } else {
     const devices = await getDevices();
@@ -307,7 +316,10 @@ async function getDevicesByUserId(userId) {
       refreshVersion: row.refresh_version || 0,
       lastRefreshRequest: row.last_refresh_request,
       registeredAt: row.registered_at,
-      lastSeen: row.last_seen
+      lastSeen: row.last_seen,
+      displayMode: row.display_mode || 'dashboard',
+      currentImageIndex: row.current_image_index || 0,
+      lastUserActivity: row.last_user_activity
     }));
   } else {
     const devices = await getDevices();
@@ -362,6 +374,18 @@ async function updateDevice(id, updates) {
     if (updates.lastRefreshRequest !== undefined) {
       setClauses.push(`last_refresh_request = $${paramIndex++}`);
       values.push(updates.lastRefreshRequest);
+    }
+    if (updates.displayMode !== undefined) {
+      setClauses.push(`display_mode = $${paramIndex++}`);
+      values.push(updates.displayMode);
+    }
+    if (updates.currentImageIndex !== undefined) {
+      setClauses.push(`current_image_index = $${paramIndex++}`);
+      values.push(updates.currentImageIndex);
+    }
+    if (updates.lastUserActivity !== undefined) {
+      setClauses.push(`last_user_activity = $${paramIndex++}`);
+      values.push(updates.lastUserActivity);
     }
 
     if (setClauses.length > 0) {

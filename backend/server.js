@@ -288,6 +288,8 @@ app.get('/api/devices', authenticate, async (req, res, next) => {
 app.post('/api/devices/:deviceId/refresh', authenticate, async (req, res, next) => {
   try {
     const { deviceId } = req.params;
+    const { mode } = req.body; // Optional: set display mode on refresh
+
     const device = await db.getDeviceById(deviceId);
 
     if (!device) {
@@ -300,13 +302,23 @@ app.post('/api/devices/:deviceId/refresh', authenticate, async (req, res, next) 
 
     // Mark device as needing refresh (increment refresh counter)
     const refreshVersion = (device.refreshVersion || 0) + 1;
-    await db.updateDevice(deviceId, {
-      refreshVersion,
-      lastRefreshRequest: new Date().toISOString()
-    });
+    const now = new Date().toISOString();
 
-    console.log(`Device ${deviceId} refresh triggered, version: ${refreshVersion}`);
-    res.json({ message: 'Device refresh triggered', refreshVersion });
+    const updates = {
+      refreshVersion,
+      lastRefreshRequest: now,
+      lastUserActivity: now // User is active when they trigger refresh
+    };
+
+    // Optionally set display mode
+    if (mode && ['dashboard', 'photo'].includes(mode)) {
+      updates.displayMode = mode;
+    }
+
+    await db.updateDevice(deviceId, updates);
+
+    console.log(`Device ${deviceId} refresh triggered, version: ${refreshVersion}, mode: ${mode || 'unchanged'}`);
+    res.json({ message: 'Device refresh triggered', refreshVersion, displayMode: mode || device.displayMode });
   } catch (error) {
     next(error);
   }
@@ -624,10 +636,11 @@ app.post('/api/images/process', authenticate, async (req, res, next) => {
 });
 
 // ESP32 bitmap endpoint - supports both photo carousel and dashboard mode
+// This endpoint is smart: it decides what to show based on settings and auto-switch logic
 app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => {
   try {
     const { deviceId } = req.params;
-    const { index = 0, mode = 'photo' } = req.query;
+    let { index, mode } = req.query;
 
     const device = await db.getDeviceById(deviceId);
     if (!device) return res.status(404).json({ error: 'Device not found' });
@@ -636,10 +649,34 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
 
     if (!device.userId) return res.status(404).json({ error: 'Device not linked to account' });
 
-    // Dashboard mode - render weather, calendar, todos
-    if (mode === 'dashboard') {
-      const settings = await db.getUserSettings(device.userId) || { city: 'Warsaw' };
+    // Get user settings for auto-switch logic
+    const settings = await db.getUserSettings(device.userId) || { city: 'Warsaw', lang: 'pl', autoImageMode: 0, rotationInterval: 60 };
+    const userImages = await db.getImagesByUserId(device.userId);
 
+    // Determine display mode based on auto-switch logic
+    let effectiveMode = mode || device.displayMode || 'dashboard';
+    let currentIndex = index !== undefined ? parseInt(index) : (device.currentImageIndex || 0);
+
+    // Auto-switch to photos after inactivity (if configured and images exist)
+    if (settings.autoImageMode > 0 && userImages.length > 0 && device.lastUserActivity) {
+      const lastActivity = new Date(device.lastUserActivity).getTime();
+      const now = Date.now();
+      const inactivityMinutes = (now - lastActivity) / (1000 * 60);
+
+      if (inactivityMinutes >= settings.autoImageMode) {
+        effectiveMode = 'photo';
+      }
+    }
+
+    // If no images, always show dashboard
+    if (userImages.length === 0) {
+      effectiveMode = 'dashboard';
+    }
+
+    const displayConfig = DISPLAY_CONFIGS['default'];
+
+    // Dashboard mode - render weather, calendar, todos
+    if (effectiveMode === 'dashboard') {
       const [weather, events, todos] = await Promise.all([
         settings.city ? weatherModule.getWeatherByCity(settings.city) : null,
         calendarModule.getUpcomingEvents(device.userId, 3),
@@ -660,112 +697,149 @@ app.get('/api/device/:deviceId/bitmap', optionalAuth, async (req, res, next) => 
 
       res.set({
         'Content-Type': 'application/octet-stream',
-        'X-Image-Width': 200,
-        'X-Image-Height': 200,
+        'X-Image-Width': displayConfig.width,
+        'X-Image-Height': displayConfig.height,
         'X-Image-Index': 0,
-        'X-Image-Total': 1,
+        'X-Image-Total': userImages.length,
         'X-Content-Type': 'dashboard',
-        'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total, X-Content-Type'
+        'X-Display-Mode': 'dashboard',
+        'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total, X-Content-Type, X-Display-Mode'
       });
 
       return res.send(bitmap);
     }
 
     // Photo carousel mode
-    const userImages = await db.getImagesByUserId(device.userId);
-    if (userImages.length === 0) {
-      // No images - return dashboard instead
-      const userSettings = await db.getUserSettings(device.userId) || { city: 'Warsaw', lang: 'pl' };
-      const weather = userSettings.city ? await weatherModule.getWeatherByCity(userSettings.city) : null;
-      const todos = await todoModule.getActiveTodos(device.userId, 4);
+    currentIndex = currentIndex % userImages.length;
+    const image = userImages[currentIndex];
 
-      const bitmap = await dashboardRenderer.renderDashboardBitmap({
-        weather,
-        events: [],
-        todos: todos || [],
-        date: new Date(),
-        lang: userSettings.lang || 'pl'
+    // Update device with current index
+    await db.updateDevice(deviceId, { currentImageIndex: currentIndex });
+
+    // Try to get processed image from database first (has dithering applied)
+    let bitmap;
+    const imageData = await db.getImageData(image.id);
+
+    if (imageData && imageData.processedData) {
+      // Use pre-processed image with dithering from database
+      const processedBuffer = imageData.processedData;
+
+      // Convert PNG to 1-bit bitmap
+      const { data } = await sharp(processedBuffer)
+        .grayscale()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      const bitmapSize = Math.ceil((displayConfig.width * displayConfig.height) / 8);
+      bitmap = Buffer.alloc(bitmapSize);
+
+      for (let i = 0; i < data.length; i++) {
+        const byteIndex = Math.floor(i / 8);
+        const bitIndex = 7 - (i % 8);
+        if (data[i] > 127) bitmap[byteIndex] |= (1 << bitIndex);
+      }
+    } else {
+      // Fallback: process image on the fly with dithering
+      let imageBuffer;
+
+      // Try database first
+      if (imageData && imageData.imageData) {
+        imageBuffer = imageData.imageData;
+      } else {
+        // Fallback to filesystem
+        const imagePath = path.join(UPLOAD_DIR, image.filename);
+        try {
+          imageBuffer = await fs.readFile(imagePath);
+        } catch {
+          return res.status(404).json({ error: 'Image file not found. Please re-upload.' });
+        }
+      }
+
+      // Process with dithering for better E-ink display
+      const result = await imageProcessor.processImage(imageBuffer, {
+        width: displayConfig.width,
+        height: displayConfig.height,
+        dithering: 'floydSteinberg'
       });
 
-      res.set({
-        'Content-Type': 'application/octet-stream',
-        'X-Image-Width': 200,
-        'X-Image-Height': 200,
-        'X-Image-Index': 0,
-        'X-Image-Total': 0,
-        'X-Content-Type': 'dashboard',
-        'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total, X-Content-Type'
-      });
-
-      return res.send(bitmap);
-    }
-
-    const imageIndex = parseInt(index) % userImages.length;
-    const image = userImages[imageIndex];
-    const imagePath = path.join(UPLOAD_DIR, image.filename);
-
-    try {
-      await fs.access(imagePath);
-    } catch {
-      return res.status(404).json({ error: 'Image file not found' });
-    }
-
-    const displayConfig = DISPLAY_CONFIGS['default'];
-
-    const { data } = await sharp(imagePath)
-      .resize(displayConfig.width, displayConfig.height, { fit: 'cover' })
-      .grayscale()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-
-    const bitmapSize = Math.ceil((displayConfig.width * displayConfig.height) / 8);
-    const bitmap = Buffer.alloc(bitmapSize);
-
-    for (let i = 0; i < data.length; i++) {
-      const byteIndex = Math.floor(i / 8);
-      const bitIndex = 7 - (i % 8);
-      if (data[i] > 127) bitmap[byteIndex] |= (1 << bitIndex);
+      bitmap = result.bitmap;
     }
 
     res.set({
       'Content-Type': 'application/octet-stream',
       'X-Image-Width': displayConfig.width,
       'X-Image-Height': displayConfig.height,
-      'X-Image-Index': imageIndex,
+      'X-Image-Index': currentIndex,
       'X-Image-Total': userImages.length,
       'X-Content-Type': 'photo',
-      'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total, X-Content-Type'
+      'X-Display-Mode': 'photo',
+      'Access-Control-Expose-Headers': 'X-Image-Width, X-Image-Height, X-Image-Index, X-Image-Total, X-Content-Type, X-Display-Mode'
     });
 
     res.send(bitmap);
   } catch (error) {
+    console.error('Bitmap endpoint error:', error);
     next(error);
   }
 });
 
+// Comprehensive device info endpoint - returns everything ESP32 needs
 app.get('/api/device/:deviceId/image-info', optionalAuth, async (req, res, next) => {
   try {
     const { deviceId } = req.params;
     const device = await db.getDeviceById(deviceId);
-    if (!device || !device.userId) return res.json({ total: 0, currentIndex: 0, rotateMinutes: 60 });
+    if (!device || !device.userId) {
+      return res.json({
+        total: 0,
+        currentIndex: 0,
+        rotateMinutes: 60,
+        autoImageMode: 0,
+        refreshVersion: 0,
+        displayMode: 'dashboard',
+        shouldRefresh: false
+      });
+    }
 
     const [userImages, settings] = await Promise.all([
       db.getImagesByUserId(device.userId),
       db.getUserSettings(device.userId)
     ]);
 
+    // Calculate if auto-switch should happen
+    let effectiveMode = device.displayMode || 'dashboard';
+    const autoImageMode = settings?.autoImageMode || 0;
+
+    if (autoImageMode > 0 && userImages.length > 0 && device.lastUserActivity) {
+      const lastActivity = new Date(device.lastUserActivity).getTime();
+      const now = Date.now();
+      const inactivityMinutes = (now - lastActivity) / (1000 * 60);
+
+      if (inactivityMinutes >= autoImageMode) {
+        effectiveMode = 'photo';
+      }
+    }
+
+    // If no images, always dashboard
+    if (userImages.length === 0) {
+      effectiveMode = 'dashboard';
+    }
+
     res.json({
       total: userImages.length,
-      currentIndex: 0,
+      currentIndex: device.currentImageIndex || 0,
       rotateMinutes: settings?.rotationInterval || 60,
-      autoImageMode: settings?.autoImageMode || 0,
-      refreshVersion: device.refreshVersion || 0
+      autoImageMode: autoImageMode,
+      refreshVersion: device.refreshVersion || 0,
+      displayMode: effectiveMode,
+      lastUserActivity: device.lastUserActivity,
+      serverTime: new Date().toISOString()
     });
   } catch (error) {
     next(error);
   }
 });
 
+// Advance to next image (called by ESP32 for rotation)
 app.post('/api/device/:deviceId/next-image', optionalAuth, async (req, res, next) => {
   try {
     const { deviceId } = req.params;
@@ -774,7 +848,42 @@ app.post('/api/device/:deviceId/next-image', optionalAuth, async (req, res, next
 
     const userImages = await db.getImagesByUserId(device.userId);
 
-    res.json({ nextIndex: 0, total: userImages.length });
+    if (userImages.length === 0) {
+      return res.json({ nextIndex: 0, total: 0 });
+    }
+
+    const currentIndex = device.currentImageIndex || 0;
+    const nextIndex = (currentIndex + 1) % userImages.length;
+
+    // Update device with new index
+    await db.updateDevice(deviceId, { currentImageIndex: nextIndex });
+
+    res.json({ nextIndex, total: userImages.length });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Set display mode (dashboard or photo) - called when user interacts
+app.post('/api/device/:deviceId/set-mode', optionalAuth, async (req, res, next) => {
+  try {
+    const { deviceId } = req.params;
+    const { mode } = req.body;
+
+    const device = await db.getDeviceById(deviceId);
+    if (!device) return res.status(404).json({ error: 'Device not found' });
+
+    const validModes = ['dashboard', 'photo'];
+    if (!validModes.includes(mode)) {
+      return res.status(400).json({ error: 'Invalid mode. Use "dashboard" or "photo"' });
+    }
+
+    await db.updateDevice(deviceId, {
+      displayMode: mode,
+      lastUserActivity: new Date().toISOString()
+    });
+
+    res.json({ message: 'Mode set', displayMode: mode });
   } catch (error) {
     next(error);
   }

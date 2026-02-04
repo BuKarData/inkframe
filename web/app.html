@@ -959,6 +959,13 @@
               <div class="device-id" id="deviceId">-</div>
               <div class="device-status online" id="deviceStatus" data-i18n="app.linked">Linked</div>
             </div>
+            <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+              <label class="form-label" data-i18n="app.displayMode">Display Mode</label>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.375rem;">
+                <button class="btn btn-outline btn-sm" id="modeDashboard" onclick="setDisplayMode('dashboard')" style="flex:1" data-i18n="app.dashboard">Dashboard</button>
+                <button class="btn btn-outline btn-sm" id="modePhoto" onclick="setDisplayMode('photo')" style="flex:1" data-i18n="app.photos">Photos</button>
+              </div>
+            </div>
           </div>
           <div id="noDevice">
             <div class="no-device">
@@ -1333,7 +1340,8 @@
           top: 'Top', center: 'Center', bottom: 'Bottom',
           small: 'Small', medium: 'Medium', large: 'Large',
           autoImageMode: 'Auto switch to photos', autoImageModeHint: 'After inactivity',
-          disabled: 'Disabled'
+          disabled: 'Disabled',
+          displayMode: 'Display Mode', dashboard: 'Dashboard', photos: 'Photos'
         }
       },
       pl: {
@@ -1365,7 +1373,8 @@
           top: 'Góra', center: 'Środek', bottom: 'Dół',
           small: 'Mały', medium: 'Średni', large: 'Duży',
           autoImageMode: 'Automatyczne zdjęcia', autoImageModeHint: 'Po braku aktywności',
-          disabled: 'Wyłączone'
+          disabled: 'Wyłączone',
+          displayMode: 'Tryb wyświetlania', dashboard: 'Panel', photos: 'Zdjęcia'
         }
       },
       de: {
@@ -1397,7 +1406,8 @@
           top: 'Oben', center: 'Mitte', bottom: 'Unten',
           small: 'Klein', medium: 'Mittel', large: 'Groß',
           autoImageMode: 'Auto-Fotomodus', autoImageModeHint: 'Nach Inaktivität',
-          disabled: 'Deaktiviert'
+          disabled: 'Deaktiviert',
+          displayMode: 'Anzeigemodus', dashboard: 'Dashboard', photos: 'Fotos'
         }
       },
       fr: {
@@ -1429,7 +1439,8 @@
           top: 'Haut', center: 'Centre', bottom: 'Bas',
           small: 'Petit', medium: 'Moyen', large: 'Grand',
           autoImageMode: 'Mode photo auto', autoImageModeHint: 'Après inactivité',
-          disabled: 'Désactivé'
+          disabled: 'Désactivé',
+          displayMode: 'Mode d\'affichage', dashboard: 'Tableau de bord', photos: 'Photos'
         }
       },
       es: {
@@ -1461,7 +1472,8 @@
           top: 'Arriba', center: 'Centro', bottom: 'Abajo',
           small: 'Pequeño', medium: 'Mediano', large: 'Grande',
           autoImageMode: 'Modo foto auto', autoImageModeHint: 'Después de inactividad',
-          disabled: 'Desactivado'
+          disabled: 'Desactivado',
+          displayMode: 'Modo de visualización', dashboard: 'Panel', photos: 'Fotos'
         }
       }
     };
@@ -1547,6 +1559,17 @@
         document.getElementById('deviceInfo').classList.remove('hidden');
         document.getElementById('noDevice').classList.add('hidden');
         document.getElementById('deviceId').textContent = currentDevice.id;
+
+        // Fetch device state to get current display mode
+        try {
+          const infoRes = await fetch(`${API_BASE}/device/${currentDevice.id}/image-info`);
+          if (infoRes.ok) {
+            const info = await infoRes.json();
+            updateModeButtons(info.displayMode || 'dashboard');
+          }
+        } catch (e) {
+          console.log('Could not fetch device info:', e);
+        }
       } else {
         document.getElementById('deviceInfo').classList.add('hidden');
         document.getElementById('noDevice').classList.remove('hidden');
@@ -1567,6 +1590,49 @@
       } else {
         const data = await res.json();
         showToast(data.error || t('app.error'), 'error');
+      }
+    }
+
+    async function setDisplayMode(mode) {
+      if (!currentDevice) return;
+
+      showToast(t('app.updating'), '');
+
+      try {
+        // Call refresh endpoint with mode to set it and trigger immediate refresh
+        const res = await api(`/devices/${currentDevice.id}/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+
+        if (res && res.ok) {
+          // Update UI to show selected mode
+          updateModeButtons(mode);
+          showToast(t('app.displayUpdated'), 'success');
+        } else {
+          showToast(t('app.error'), 'error');
+        }
+      } catch (error) {
+        console.error('Set mode error:', error);
+        showToast(t('app.error'), 'error');
+      }
+    }
+
+    function updateModeButtons(mode) {
+      const dashboardBtn = document.getElementById('modeDashboard');
+      const photoBtn = document.getElementById('modePhoto');
+
+      if (mode === 'dashboard') {
+        dashboardBtn.classList.remove('btn-outline');
+        dashboardBtn.classList.add('btn-primary');
+        photoBtn.classList.remove('btn-primary');
+        photoBtn.classList.add('btn-outline');
+      } else {
+        photoBtn.classList.remove('btn-outline');
+        photoBtn.classList.add('btn-primary');
+        dashboardBtn.classList.remove('btn-primary');
+        dashboardBtn.classList.add('btn-outline');
       }
     }
 
@@ -2096,12 +2162,31 @@
           });
         }
 
+        // Determine what display mode to set based on what was changed
+        // If user edited/uploaded images, switch to photo mode
+        // If user changed settings/todos, stay in dashboard mode (or let auto-switch decide)
+        let displayMode = null;
+        if (pendingChanges.editor || pendingChanges.images) {
+          displayMode = 'photo';
+        } else if (pendingChanges.settings || pendingChanges.todos) {
+          displayMode = 'dashboard';
+        }
+
         // Trigger device display refresh - this tells ESP32 to fetch new content
         if (currentDevice) {
-          const refreshRes = await api(`/devices/${currentDevice.id}/refresh`, { method: 'POST' });
+          const refreshBody = {};
+          if (displayMode) {
+            refreshBody.mode = displayMode;
+          }
+
+          const refreshRes = await api(`/devices/${currentDevice.id}/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(refreshBody)
+          });
           if (refreshRes && refreshRes.ok) {
             const data = await refreshRes.json();
-            console.log('Device refresh triggered, version:', data.refreshVersion);
+            console.log('Device refresh triggered, version:', data.refreshVersion, 'mode:', displayMode);
           }
         }
 
@@ -2124,6 +2209,7 @@
       if (originalSettings) {
         document.getElementById('cityInput').value = originalSettings.city || '';
         document.getElementById('rotationInterval').value = originalSettings.rotationInterval || 60;
+        document.getElementById('autoImageMode').value = originalSettings.autoImageMode || 0;
       }
 
       // Reset editor
