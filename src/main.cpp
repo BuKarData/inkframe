@@ -116,6 +116,7 @@ void toggleMode();
 void advanceImage();
 void setupSecureClient();
 bool pollServerForInstructions();
+void notifyServerModeChange(const char* mode);
 
 // ============================================================
 // SETUP
@@ -201,15 +202,22 @@ void loop() {
 // TOGGLE MODE (BOOT button cycles: Dashboard -> Photos -> Dashboard)
 // ============================================================
 void toggleMode() {
+  String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
+
   if (currentMode == MODE_DASHBOARD) {
     // Try to switch to photo mode
     currentMode = MODE_IMAGE;
     Serial.println("Switching to PHOTO mode");
+
+    // Notify server of mode change
+    notifyServerModeChange("photo");
+
     if (fetchImage(currentImageIndex)) {
       drawImage();
     } else {
       Serial.println("No photos available, staying on dashboard");
       currentMode = MODE_DASHBOARD;
+      notifyServerModeChange("dashboard");
       // Fetch server-rendered dashboard
       if (fetchDashboard()) {
         drawImage();
@@ -221,6 +229,10 @@ void toggleMode() {
     // Switch back to dashboard mode
     currentMode = MODE_DASHBOARD;
     Serial.println("Switching to DASHBOARD mode");
+
+    // Notify server of mode change
+    notifyServerModeChange("dashboard");
+
     // Fetch server-rendered dashboard (with weather, calendar, todos)
     if (fetchDashboard()) {
       drawImage();
@@ -228,6 +240,30 @@ void toggleMode() {
       drawDashboard();  // Local fallback
     }
   }
+}
+
+// ============================================================
+// NOTIFY SERVER OF MODE CHANGE
+// ============================================================
+void notifyServerModeChange(const char* mode) {
+  HTTPClient http;
+  String deviceId = String((uint32_t)ESP.getEfuseMac(), HEX);
+  String url = String(API_SERVER) + "/api/device/" + deviceId + "/set-mode";
+
+  http.begin(secureClient, url);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(5000);
+
+  String payload = "{\"mode\":\"" + String(mode) + "\"}";
+  int httpCode = http.POST(payload);
+
+  if (httpCode == 200) {
+    Serial.printf("Server mode updated to: %s\n", mode);
+  } else {
+    Serial.printf("Failed to update server mode: %d\n", httpCode);
+  }
+
+  http.end();
 }
 
 // ============================================================

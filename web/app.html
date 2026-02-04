@@ -1184,7 +1184,7 @@
                         <span class="slider-label" data-i18n="app.brightness">Brightness</span>
                         <span class="slider-value" id="brightnessValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="brightnessSlider" min="-100" max="100" value="0" oninput="updateSliderValue('brightness'); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
+                      <input type="range" class="slider" id="brightnessSlider" min="-100" max="100" value="0" oninput="updateSliderValue('brightness'); markEditorChange(); updatePreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1192,7 +1192,7 @@
                         <span class="slider-label" data-i18n="app.contrast">Contrast</span>
                         <span class="slider-value" id="contrastValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="contrastSlider" min="-100" max="100" value="0" oninput="updateSliderValue('contrast'); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
+                      <input type="range" class="slider" id="contrastSlider" min="-100" max="100" value="0" oninput="updateSliderValue('contrast'); markEditorChange(); updatePreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1200,7 +1200,7 @@
                         <span class="slider-label" data-i18n="app.sharpness">Sharpness</span>
                         <span class="slider-value" id="sharpnessValue">0</span>
                       </div>
-                      <input type="range" class="slider" id="sharpnessSlider" min="0" max="100" value="0" oninput="updateSliderValue('sharpness'); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
+                      <input type="range" class="slider" id="sharpnessSlider" min="0" max="100" value="0" oninput="updateSliderValue('sharpness'); markEditorChange(); updatePreview()">
                     </div>
 
                     <div class="slider-group">
@@ -1208,7 +1208,7 @@
                         <span class="slider-label" data-i18n="app.gamma">Gamma</span>
                         <span class="slider-value" id="gammaValue">1.0</span>
                       </div>
-                      <input type="range" class="slider" id="gammaSlider" min="50" max="200" value="100" oninput="updateSliderValue('gamma'); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
+                      <input type="range" class="slider" id="gammaSlider" min="50" max="200" value="100" oninput="updateSliderValue('gamma'); markEditorChange(); updatePreview()">
                     </div>
                   </div>
 
@@ -1254,7 +1254,7 @@
                         <span class="slider-label" data-i18n="app.zoom">Zoom</span>
                         <span class="slider-value" id="cropZoomValue">100%</span>
                       </div>
-                      <input type="range" class="slider" id="cropZoomSlider" min="30" max="100" value="100" oninput="updateCropZoom(); markEditorChange(); updateClientPreview()" onchange="updatePreview()">
+                      <input type="range" class="slider" id="cropZoomSlider" min="30" max="100" value="100" oninput="updateCropZoom(); markEditorChange()">
                     </div>
 
                     <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;" data-i18n="app.cropHint">Drag on the source image to position</p>
@@ -1348,146 +1348,6 @@
       textSize: 'medium'
     };
     let previewDebounce = null;
-
-    // Client-side preview for instant feedback
-    let clientPreviewCanvas = null;
-    let clientPreviewCtx = null;
-    let sourceImageData = null;
-    let sourceImageElement = null;
-
-    function initClientPreview() {
-      clientPreviewCanvas = document.createElement('canvas');
-      clientPreviewCanvas.width = 200;
-      clientPreviewCanvas.height = 200;
-      clientPreviewCtx = clientPreviewCanvas.getContext('2d', { willReadFrequently: true });
-    }
-
-    // Load source image into canvas for client-side processing
-    function loadSourceForClientPreview() {
-      if (!editingImage) return;
-
-      sourceImageElement = new Image();
-      sourceImageElement.crossOrigin = 'anonymous';
-      sourceImageElement.onload = () => {
-        // Draw source image to get pixel data
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = 200;
-        tempCanvas.height = 200;
-        const tempCtx = tempCanvas.getContext('2d');
-
-        // Calculate crop area
-        const cropW = editorSettings.cropW || 1;
-        const cropH = editorSettings.cropH || 1;
-        const cropX = editorSettings.cropX || 0;
-        const cropY = editorSettings.cropY || 0;
-
-        const srcW = sourceImageElement.width * cropW;
-        const srcH = sourceImageElement.height * cropH;
-        const srcX = sourceImageElement.width * cropX;
-        const srcY = sourceImageElement.height * cropY;
-
-        tempCtx.drawImage(sourceImageElement, srcX, srcY, srcW, srcH, 0, 0, 200, 200);
-        sourceImageData = tempCtx.getImageData(0, 0, 200, 200);
-
-        // Initial client preview
-        updateClientPreview();
-      };
-      sourceImageElement.src = editingImage.url;
-    }
-
-    // Fast client-side preview (instant, no server call)
-    function updateClientPreview() {
-      if (!sourceImageData || !clientPreviewCtx || !editingImage) return;
-
-      // Reload source with current crop settings
-      if (sourceImageElement && sourceImageElement.complete) {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = 200;
-        tempCanvas.height = 200;
-        const tempCtx = tempCanvas.getContext('2d');
-
-        const cropW = editorSettings.cropW || 1;
-        const cropH = editorSettings.cropH || 1;
-        const cropX = editorSettings.cropX || 0;
-        const cropY = editorSettings.cropY || 0;
-
-        const srcW = sourceImageElement.width * cropW;
-        const srcH = sourceImageElement.height * cropH;
-        const srcX = sourceImageElement.width * cropX;
-        const srcY = sourceImageElement.height * cropY;
-
-        tempCtx.drawImage(sourceImageElement, srcX, srcY, srcW, srcH, 0, 0, 200, 200);
-        sourceImageData = tempCtx.getImageData(0, 0, 200, 200);
-      }
-
-      // Create output image data
-      const outputData = clientPreviewCtx.createImageData(200, 200);
-      const src = sourceImageData.data;
-      const dst = outputData.data;
-
-      // Get adjustment values
-      const brightness = editorSettings.brightness / 100;
-      const contrast = (editorSettings.contrast + 100) / 100;
-      const gamma = editorSettings.gamma || 1.0;
-
-      // Apply adjustments pixel by pixel
-      for (let i = 0; i < src.length; i += 4) {
-        let r = src[i];
-        let g = src[i + 1];
-        let b = src[i + 2];
-
-        // Apply contrast (centered at 128)
-        r = ((r / 255 - 0.5) * contrast + 0.5) * 255;
-        g = ((g / 255 - 0.5) * contrast + 0.5) * 255;
-        b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
-
-        // Apply brightness
-        r += brightness * 255;
-        g += brightness * 255;
-        b += brightness * 255;
-
-        // Apply gamma
-        if (gamma !== 1.0) {
-          r = 255 * Math.pow(Math.max(0, r / 255), 1 / gamma);
-          g = 255 * Math.pow(Math.max(0, g / 255), 1 / gamma);
-          b = 255 * Math.pow(Math.max(0, b / 255), 1 / gamma);
-        }
-
-        // Apply invert
-        if (editorSettings.invert) {
-          r = 255 - r;
-          g = 255 - g;
-          b = 255 - b;
-        }
-
-        // Clamp values
-        dst[i] = Math.max(0, Math.min(255, r));
-        dst[i + 1] = Math.max(0, Math.min(255, g));
-        dst[i + 2] = Math.max(0, Math.min(255, b));
-        dst[i + 3] = 255;
-      }
-
-      // Put processed data to canvas
-      clientPreviewCtx.putImageData(outputData, 0, 0);
-
-      // Simple threshold dithering preview (fast approximation)
-      const previewData = clientPreviewCtx.getImageData(0, 0, 200, 200);
-      const pd = previewData.data;
-      for (let i = 0; i < pd.length; i += 4) {
-        const gray = 0.299 * pd[i] + 0.587 * pd[i + 1] + 0.114 * pd[i + 2];
-        const bw = gray > 128 ? 255 : 0;
-        pd[i] = pd[i + 1] = pd[i + 2] = bw;
-      }
-      clientPreviewCtx.putImageData(previewData, 0, 0);
-
-      // Update preview frame with canvas
-      const frame = document.getElementById('previewFrame');
-      frame.innerHTML = '';
-      const img = document.createElement('img');
-      img.src = clientPreviewCanvas.toDataURL();
-      img.alt = 'Preview';
-      frame.appendChild(img);
-    }
 
     // Pending changes tracking
     let pendingChanges = {
@@ -2038,7 +1898,6 @@
         switchTab('editor');
         renderGallery();
         loadSourceImage();
-        loadSourceForClientPreview();  // Load source for instant client-side preview
         updatePreview();
       }
     }
@@ -2186,7 +2045,7 @@
       editorSettings.cropY = Math.min(editorSettings.cropY, maxOffset);
 
       updateCropOverlay();
-      // updatePreview() is called by onchange event on the slider
+      updatePreview();
     }
 
     function updateCropOverlay() {
@@ -2346,8 +2205,7 @@
       editorSettings.invert = !editorSettings.invert;
       document.getElementById('invertToggle').classList.toggle('active', editorSettings.invert);
       markEditorChange();
-      updateClientPreview();  // Instant feedback
-      updatePreview();        // Server preview with dithering
+      updatePreview();
     }
 
     function resetEditor() {
@@ -2572,9 +2430,6 @@
       if (!checkAuth()) return;
 
       document.getElementById('userName').textContent = user?.name || user?.email || '';
-
-      // Initialize client-side preview canvas
-      initClientPreview();
 
       // Check for calendar callback
       const params = new URLSearchParams(window.location.search);
